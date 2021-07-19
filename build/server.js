@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var express_1 = __importDefault(require("express"));
-var types_json_1 = __importDefault(require("./assets/types.json"));
+var types_json_1 = __importDefault(require("./data/types.json"));
 var app = express_1.default();
 var PAT = "testtokenabcdefg";
 // create token - do we need this?
@@ -19,7 +19,6 @@ app.get('/v4/linode/types', function (req, res) {
 // Type View
 app.get('/v4/linode/types/:typeId', function (req, res) {
     var typeData = types_json_1.default.data.filter(function (type) { return type.id == req.params.typeId; });
-    console.log(typeData);
     if (typeData.length) {
         res.send(typeData);
     }
