@@ -1,4 +1,5 @@
 import express from 'express';
+import types from './assets/types.json';
 
 const app = express();
 const PAT = "testtokenabcdefg"
@@ -7,12 +8,27 @@ const PAT = "testtokenabcdefg"
 //     res.send()
 // })
 
-
+// ===== Linode Types API =====
+// Types List
 app.get('/v4/linode/types', (req, res) => {
-    res.sendFile('Types-Response.txt', {"root": "./assets"})
+    res.send(types)
 })
 
+// Type View
+app.get('/v4/linode/types/:typeId', (req, res) => {
+    let typeData = types.data.filter(type => type.id == req.params.typeId)
+    if (typeData.length) {
+        res.send(typeData)
+    } else {
+        res.statusCode = 404
+        res.json({"errors": [{"reason": "Not found"}]})
+    }
+})
 
+// ===== Linode Instances API =====
+app.get('/v4/linode/instances', (req, res) => {
+    res.send()
+})
 
 
 app.listen(3000, () => {
