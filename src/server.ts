@@ -149,7 +149,6 @@ app.post('/v4/volumes/:volumeId/detach', (req, res) => {})
 app.post('/v4/volumes/:volumeId/resize', (req, res) => {})
 
 // ==== Start server =====
-
 app.listen(3000, () => {
     console.log('The application is listening on port 3000!');
 })
