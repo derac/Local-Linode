@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "serve": "npm run build & node ./build/server.js",
+    "start": "npm run build & node ./build/server.js",
     "build": "tsc --resolveJsonModule",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
