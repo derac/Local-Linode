@@ -2,12 +2,10 @@ import express from 'express'
 import types from './data/types.json'
 import Docker from 'dockerode'
 
-const app = express();
-const PAT = "testtokenabcdefg"
-// create token - needed?
-// app.post('/v4/profile/tokens', (req, res) => {
-//     res.send()
-// })
+const app = express()
+const docker = new Docker()
+
+//const PAT = "testtokenabcdefg"
 
 // ===== Linode Types API =====
 // Types List
@@ -28,7 +26,9 @@ app.get('/v4/linode/types/:typeId', (req, res) => {
 
 // ===== Linode Instances API =====
 // Linodes List
-app.get('/v4/linode/instances', (req, res) => {})
+app.get('/v4/linode/instances', (req, res) => {
+    docker.listContainers({all:true}).then(a => console.log(a))
+})
 
 // Linode Create
 app.post('/v4/linode/instances', (req, res) => {})
@@ -95,9 +95,6 @@ app.get('/v4/linode/instances/:linodeId/ips/:address', (req, res) => {})
 
 // IP Address Update
 app.put('/v4/linode/instances/:linodeId/ips/:address', (req, res) => {})
-
-// DC Migration/Pending Host Migration Initiate - needed?
-app.post('/v4/linode/instances/:linodeId/migrate', (req, res) => {})
 
 // Linode Upgrade
 app.post('/v4/linode/instances/:linodeId/mutate', (req, res) => {})
