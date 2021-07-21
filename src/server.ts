@@ -1,12 +1,10 @@
 import express from "express";
-import Docker from "dockerode";
 
 import types from "./routes/types";
 import instances from "./routes/instances";
 import volumes from "./routes/volumes";
 
 const app = express();
-const docker = new Docker();
 const PersonalAccessToken = "testtokenabcdefg";
 
 app.use("/v4/linode/types", types);

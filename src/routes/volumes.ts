@@ -1,6 +1,8 @@
 import express from "express";
+import Docker from "dockerode";
 
 const router = express.Router();
+const docker = new Docker();
 
 // ===== Linode Volumes API =====
 // /v4/volumes
