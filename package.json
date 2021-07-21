@@ -2,7 +2,7 @@
   "name": "Linode-API-Sandbox",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./build/server.js",
   "scripts": {
     "start": "npm run build & node ./build/server.js",
     "build": "tsc --resolveJsonModule",
