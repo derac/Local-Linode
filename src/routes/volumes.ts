@@ -35,9 +35,14 @@ router.post("/", (req, res) => {
   label = req.headers.label
     ? (req.headers.label as string)
     : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
-  docker.createVolume({ name: label }).then(() => {
-    res.send(`${size}, ${label}`);
-  });
+  docker
+    .createVolume({ name: label })
+    .then((volume) => {
+      res.send(volume);
+    })
+    .catch((err) => {
+      res.status(500).json({ errors: [{ reason: err }] });
+    });
 });
 
 // Volume Delete
