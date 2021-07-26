@@ -1,4 +1,8 @@
+import fs from "fs";
+import path from "path";
+
 import express from "express";
+import sqlite3 from "sqlite3";
 
 import types from "./routes/types";
 import instances from "./routes/instances";
@@ -6,6 +10,16 @@ import volumes from "./routes/volumes";
 
 const app = express();
 const PersonalAccessToken = "testtokenabcdefg";
+
+// make database if it doesn't exist
+const db_file = path.join(__dirname, "./data/database.sqlite3");
+if (!fs.existsSync(db_file)) {
+  fs.openSync(db_file, "w");
+  const db = new sqlite3.Database(db_file);
+  db.run("CREATE TABLE volumes (label TEXT, data JSON)");
+  db.run("CREATE TABLE instances (id TEXT, data JSON)");
+  db.run("CREATE TABLE types (id TEXT, data JSON)");
+}
 
 app.use("/v4/linode/types", types);
 

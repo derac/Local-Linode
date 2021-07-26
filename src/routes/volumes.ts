@@ -19,22 +19,18 @@ router.get("/", (req, res) => {
 // Volume Create
 router.post("/", (req, res) => {
   let config_id: number | null,
-    label: string,
-    linode_id: number | null,
+    label: string = req.headers.label
+      ? (req.headers.label as string)
+      : [...Array(32)]
+          .map(() => (~~(Math.random() * 36)).toString(36))
+          .join(""),
+    linode_id: number | null = req.headers.linode_id
+      ? parseInt(req.headers.linode_id as string)
+      : null,
     region: string | null,
-    size: number,
-    tags: string[] | null;
-  let datetime = new Date().toISOString();
-  // optional, size in GB defaults to 20
-  size = req.headers.size ? parseInt(req.headers.size as string) : 20;
-  // optional, linode id to attach to
-  linode_id = req.headers.linode_id
-    ? parseInt(req.headers.linode_id as string)
-    : null;
-  // optional, label will be created if not supplied
-  label = req.headers.label
-    ? (req.headers.label as string)
-    : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+    size: number = req.headers.size ? parseInt(req.headers.size as string) : 20,
+    tags: string[] | null,
+    datetime = new Date().toISOString();
   docker
     .createVolume({ name: label })
     .then((volume) => {
