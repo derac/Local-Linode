@@ -20,7 +20,7 @@ router.get("/", (req, res) => {
   db.all("SELECT * FROM volumes", (err, rows) => {
     rows = rows.map((row) => ({ data: row["data"] }));
     rows.length;
-    res.json({
+    return res.json({
       data: rows,
       page: 1,
       pages: 1,
@@ -63,35 +63,58 @@ router.post("/", (req, res) => {
           status: "active",
           updated: datetime,
         };
-        console.log(JSON.stringify(res_json));
         db.run(
           `INSERT INTO volumes ('data') VALUES ('${JSON.stringify(res_json)}')`
         );
-        res.json(res_json);
+        return res.json(res_json);
       });
     })
     .catch((err) => {
-      res.status(500).json({ errors: [{ reason: err }] });
+      return res.status(500).json({ errors: [{ reason: err }] });
     });
 });
 
 // Volume Delete
 router.delete("/:volumeId", (req, res) => {
-  if (isNaN(req.params.volumeId)) {
-    res.status(500).json({
+  if (isNaN(req.params.volumeId as any)) {
+    return res.status(500).json({
       errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
     });
   }
   db.run(`DELETE FROM volumes WHERE id=${req.params.volumeId}`, (err) => {
     if (err) {
-      res.status(500).json({ errors: [{ field: "volumeId", reason: err }] });
+      return res
+        .status(500)
+        .json({ errors: [{ field: "volumeId", reason: err }] });
     }
-    res.json({});
+    return res.json({});
   });
 });
 
 // Volume View
-router.get("/:volumeId", (req, res) => {});
+router.get("/:volumeId", (req, res) => {
+  if (isNaN(req.params.volumeId as any)) {
+    return res.status(500).json({
+      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
+    });
+  }
+  db.get(
+    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "volumeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+        });
+      }
+      return res.json(row["data"]);
+    }
+  );
+});
 
 // Volume Update
 router.put("/:volumeId", (req, res) => {});
