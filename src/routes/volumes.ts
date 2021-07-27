@@ -76,7 +76,19 @@ router.post("/", (req, res) => {
 });
 
 // Volume Delete
-router.delete("/:volumeId", (req, res) => {});
+router.delete("/:volumeId", (req, res) => {
+  if (isNaN(req.params.volumeId)) {
+    res.status(500).json({
+      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
+    });
+  }
+  db.run(`DELETE FROM volumes WHERE id=${req.params.volumeId}`, (err) => {
+    if (err) {
+      res.status(500).json({ errors: [{ field: "volumeId", reason: err }] });
+    }
+    res.json({});
+  });
+});
 
 // Volume View
 router.get("/:volumeId", (req, res) => {});
