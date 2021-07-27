@@ -1,10 +1,16 @@
+import path from "path";
+
 import express from "express";
 import Docker from "dockerode";
+import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
 
 const router = express.Router();
 const docker = new Docker();
+const db = new sqlite3.Database(
+  path.join(__dirname, "../data/database.sqlite3")
+);
 
 // ===== Linode Volumes API =====
 // /v4/volumes
@@ -34,7 +40,24 @@ router.post("/", (req, res) => {
   docker
     .createVolume({ name: label })
     .then((volume) => {
-      res.send(volume);
+      let id: number;
+      db.get("SELECT MAX(id) from volumes", (err, row) => {
+        if (row["MAX(id)"]) {
+          id = row["MAX(id)"] + 1;
+        } else {
+          id = 1;
+        }
+        let res_json = {
+          created: datetime,
+          filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
+          id: id,
+        };
+        console.log(JSON.stringify(res_json));
+        db.run(
+          `INSERT INTO volumes ('data') VALUES ('${JSON.stringify(res_json)}')`
+        );
+        res.json(res_json);
+      });
     })
     .catch((err) => {
       res.status(500).json({ errors: [{ reason: err }] });
