@@ -4,13 +4,6 @@ import path from "path";
 import express from "express";
 import sqlite3 from "sqlite3";
 
-import types from "./routes/types";
-import instances from "./routes/instances";
-import volumes from "./routes/volumes";
-
-const app = express();
-const PersonalAccessToken = "testtokenabcdefg";
-
 // make database if it doesn't exist
 const db_file = path.join(__dirname, "./data/database.sqlite3");
 if (!fs.existsSync(db_file)) {
@@ -23,6 +16,13 @@ if (!fs.existsSync(db_file)) {
     'CREATE TABLE "instances" ("id"	INTEGER NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id" AUTOINCREMENT) );'
   );
 }
+
+import types from "./routes/types";
+import instances from "./routes/instances";
+import volumes from "./routes/volumes";
+
+const app = express();
+const PersonalAccessToken = "testtokenabcdefg";
 
 app.use("/v4/linode/types", types);
 
