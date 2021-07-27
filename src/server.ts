@@ -16,9 +16,12 @@ const db_file = path.join(__dirname, "./data/database.sqlite3");
 if (!fs.existsSync(db_file)) {
   fs.openSync(db_file, "w");
   const db = new sqlite3.Database(db_file);
-  db.run("CREATE TABLE volumes (label TEXT, data JSON)");
-  db.run("CREATE TABLE instances (id TEXT, data JSON)");
-  db.run("CREATE TABLE types (id TEXT, data JSON)");
+  db.run(
+    'CREATE TABLE "volumes" ("id"	INTEGER NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id" AUTOINCREMENT) );'
+  );
+  db.run(
+    'CREATE TABLE "instances" ("id"	INTEGER NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id" AUTOINCREMENT) );'
+  );
 }
 
 app.use("/v4/linode/types", types);
