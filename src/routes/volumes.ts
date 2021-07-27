@@ -17,8 +17,15 @@ const db = new sqlite3.Database(
 
 // Volumes List
 router.get("/", (req, res) => {
-  docker.listVolumes().then(() => {
-    //res.send(a);
+  db.all("SELECT * FROM volumes", (err, rows) => {
+    rows = rows.map((row) => ({ data: row["data"] }));
+    rows.length;
+    res.json({
+      data: rows,
+      page: 1,
+      pages: 1,
+      results: rows.length,
+    });
   });
 });
 
@@ -51,6 +58,10 @@ router.post("/", (req, res) => {
           created: datetime,
           filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
           id: id,
+          label: label,
+          size: size,
+          status: "active",
+          updated: datetime,
         };
         console.log(JSON.stringify(res_json));
         db.run(
