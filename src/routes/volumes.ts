@@ -5,6 +5,7 @@ import Docker from "dockerode";
 import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
+import { rawListeners } from "process";
 
 const router = express.Router();
 const docker = new Docker();
@@ -18,7 +19,7 @@ const db = new sqlite3.Database(
 // Volumes List
 router.get("/", (req, res) => {
   db.all("SELECT * FROM volumes", (err, rows) => {
-    rows = rows.map((row) => ({ data: row["data"] }));
+    rows = rows.map((row) => ({ data: JSON.parse(row["data"]) }));
     rows.length;
     return res.json({
       data: rows,
@@ -62,6 +63,10 @@ router.post("/", (req, res) => {
           size: size,
           status: "active",
           updated: datetime,
+          tags: [],
+          region: "",
+          linode_id: "",
+          linode_label: "",
         };
         db.run(
           `INSERT INTO volumes ('data') VALUES ('${JSON.stringify(res_json)}')`
@@ -111,13 +116,72 @@ router.get("/:volumeId", (req, res) => {
           errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
         });
       }
-      return res.json(row["data"]);
+      return res.json(JSON.parse(row["data"]));
     }
   );
 });
 
 // Volume Update
-router.put("/:volumeId", (req, res) => {});
+router.put("/:volumeId", (req, res) => {
+  if (isNaN(req.params.volumeId as any)) {
+    return res.status(500).json({
+      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
+    });
+  }
+  if (!req.headers.label) {
+    return res.status(500).json({
+      errors: [{ field: "label", reason: "label must be a valid value" }],
+    });
+  }
+  let tags: string[] | null = null;
+  try {
+    if (req.headers.tags) {
+      tags = JSON.parse(req.headers.tags as string);
+      if (!tags?.every((el) => typeof el === "string")) {
+        throw "All values of array must be strings";
+      }
+    }
+  } catch {
+    return res.status(500).json({
+      errors: [{ field: "tags", reason: "tags must be a valid value" }],
+    });
+  }
+  let datetime: string = new Date().toISOString();
+  db.get(
+    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "volumeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+        });
+      }
+      let updated_json = JSON.parse(row["data"]);
+      updated_json["label"] = req.headers.label;
+      updated_json["updated"] = datetime;
+      if (tags) {
+        updated_json["tags"] = tags;
+      }
+      db.run(
+        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id=${
+          req.params.volumeId
+        }`,
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "volumeId", reason: err }] });
+          }
+          return res.json(updated_json);
+        }
+      );
+    }
+  );
+});
 
 // Volume Attach
 router.post("/:volumeId/attach", (req, res) => {});
@@ -140,6 +204,7 @@ router.post("/:volumeId/resize", (req, res) => {
       errors: [{ field: "size", reason: "size must be a valid value" }],
     });
   }
+  let datetime = new Date().toISOString();
   db.get(
     `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
     (err, row) => {
@@ -155,6 +220,7 @@ router.post("/:volumeId/resize", (req, res) => {
       }
       let updated_json = JSON.parse(row["data"]);
       updated_json["size"] = Number(req.headers.size);
+      updated_json["updated"] = datetime;
       db.run(
         `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id=${
           req.params.volumeId
