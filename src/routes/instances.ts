@@ -1,8 +1,18 @@
+import path from "path";
+
 import express from "express";
 import Docker from "dockerode";
+import sqlite3 from "sqlite3";
+
+import types from "../data/types.json";
+import regions from "../data/regions.json";
 
 const router = express.Router();
 const docker = new Docker();
+
+const db = new sqlite3.Database(
+  path.join(__dirname, "../data/database.sqlite3")
+);
 
 // ===== Linode Instances API =====
 // /v4/linode/instances
