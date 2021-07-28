@@ -97,14 +97,31 @@ router.delete("/:volumeId", (req, res) => {
       errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
     });
   }
-  db.run(`DELETE FROM volumes WHERE id=${req.params.volumeId}`, (err) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ errors: [{ field: "volumeId", reason: err }] });
+  db.get(
+    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "volumeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+        });
+      }
+      let volume_label = JSON.parse(row["data"])["label"];
+      db.run(`DELETE FROM volumes WHERE id=${req.params.volumeId}`, (err) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "volumeId", reason: err }] });
+        }
+        docker.getVolume(volume_label).remove();
+        return res.json({});
+      });
     }
-    return res.json({});
-  });
+  );
 });
 
 // Volume View
