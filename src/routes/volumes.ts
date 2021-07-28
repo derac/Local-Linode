@@ -5,7 +5,6 @@ import Docker from "dockerode";
 import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
-import { rawListeners } from "process";
 
 const router = express.Router();
 const docker = new Docker();
@@ -43,8 +42,20 @@ router.post("/", (req, res) => {
       : null,
     region: string | null,
     size: number = req.headers.size ? parseInt(req.headers.size as string) : 20,
-    tags: string[] | null,
+    tags: string[] = [],
     datetime = new Date().toISOString();
+  try {
+    if (req.headers.tags) {
+      tags = JSON.parse(req.headers.tags as string);
+      if (!tags?.every((el) => typeof el === "string")) {
+        throw "All values of tags array must be strings";
+      }
+    }
+  } catch {
+    return res.status(500).json({
+      errors: [{ field: "tags", reason: "tags must be a valid value" }],
+    });
+  }
   docker
     .createVolume({ name: label })
     .then((volume) => {
@@ -63,7 +74,7 @@ router.post("/", (req, res) => {
           size: size,
           status: "active",
           updated: datetime,
-          tags: [],
+          tags: tags,
           region: "",
           linode_id: "",
           linode_label: "",
@@ -138,7 +149,7 @@ router.put("/:volumeId", (req, res) => {
     if (req.headers.tags) {
       tags = JSON.parse(req.headers.tags as string);
       if (!tags?.every((el) => typeof el === "string")) {
-        throw "All values of array must be strings";
+        throw "All values of tags array must be strings";
       }
     }
   } catch {
