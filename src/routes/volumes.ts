@@ -129,6 +129,47 @@ router.post("/:volumeId/clone", (req, res) => {});
 router.post("/:volumeId/detach", (req, res) => {});
 
 // Volume Resize
-router.post("/:volumeId/resize", (req, res) => {});
+router.post("/:volumeId/resize", (req, res) => {
+  if (isNaN(req.params.volumeId as any)) {
+    return res.status(500).json({
+      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
+    });
+  }
+  if (!req.headers.size || isNaN(req.headers.size as any)) {
+    return res.status(500).json({
+      errors: [{ field: "size", reason: "size must be a valid value" }],
+    });
+  }
+  db.get(
+    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "volumeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+        });
+      }
+      let updated_json = JSON.parse(row["data"]);
+      updated_json["size"] = Number(req.headers.size);
+      db.run(
+        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id=${
+          req.params.volumeId
+        }`,
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "volumeId", reason: err }] });
+          }
+          return res.json({});
+        }
+      );
+    }
+  );
+});
 
 export default router;
