@@ -44,6 +44,16 @@ router.post("/", (req, res) => {
     size: number = req.headers.size ? parseInt(req.headers.size as string) : 20,
     tags: string[] = [],
     datetime = new Date().toISOString();
+  if (!(2 < label.length && label.length < 33)) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "label",
+          reason: "label must be between 2 and 32 characters.",
+        },
+      ],
+    });
+  }
   try {
     if (req.headers.tags) {
       tags = JSON.parse(req.headers.tags as string);

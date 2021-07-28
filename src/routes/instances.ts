@@ -28,10 +28,41 @@ router.get("/", (req, res) => {
 });
 
 // Linode Create
-router.post("/", (req, res) => {});
+router.post("/", (req, res) => {
+  let label: string = req.headers.label
+    ? (req.headers.label as string)
+    : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+  if (!(2 < label.length && label.length < 33)) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "label",
+          reason: "label must be between 2 and 32 characters.",
+        },
+      ],
+    });
+  }
+  docker
+    .createContainer({
+      Image: "ubuntu",
+      name: label,
+      Tty: false,
+    })
+    .then((container) => {
+      return container.start((err, data) => {
+        console.log(err);
+        console.log(data);
+      });
+    })
+    .then((data) => {
+      return res.send(data);
+    });
+});
 
 // Linode Delete
-router.delete("/:linodeId", (req, res) => {});
+router.delete("/:linodeId", (req, res) => {
+  //docker.getContainer()
+});
 
 // Linode View
 router.get("/:linodeId", (req, res) => {});
