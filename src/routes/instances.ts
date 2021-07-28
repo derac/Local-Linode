@@ -6,6 +6,8 @@ import sqlite3 from "sqlite3";
 
 import types from "../data/types.json";
 import regions from "../data/regions.json";
+import disks from "./instances/disks";
+import configs from "./instances/configs";
 
 const router = express.Router();
 const docker = new Docker();
@@ -16,6 +18,9 @@ const db = new sqlite3.Database(
 
 // ===== Linode Instances API =====
 // /v4/linode/instances
+
+router.use("/:linodeId/disks", disks);
+router.use("/:linodeId/configs", configs);
 
 // Linodes List
 router.get("/", (req, res) => {
@@ -36,45 +41,6 @@ router.put("/:linodeId", (req, res) => {});
 
 // Linode Boot
 router.post("/:linodeId/boot", (req, res) => {});
-
-// Configuration Profiles List
-router.get("/:linodeId/configs", (req, res) => {});
-
-// Configuration Profile Create
-router.post("/:linodeId/configs", (req, res) => {});
-
-// Configuration Profile Delete
-router.delete("/:linodeId/configs/:configId", (req, res) => {});
-
-// Configuration Profile View
-router.get("/:linodeId/configs/:configId", (req, res) => {});
-
-// Configuration Profile Update
-router.put("/:linodeId/configs/:configId", (req, res) => {});
-
-// Disks List
-router.get("/:linodeId/disks", (req, res) => {});
-
-// Disk Create
-router.post("/:linodeId/disks", (req, res) => {});
-
-// Disk Delete
-router.delete("/:linodeId/disks/:diskId", (req, res) => {});
-
-// Disk View
-router.get("/:linodeId/disks/:diskId", (req, res) => {});
-
-// Disk Update
-router.put("/:linodeId/disks/:diskId", (req, res) => {});
-
-// Disk Clone
-router.post("/:linodeId/disks/:diskId/clone", (req, res) => {});
-
-// Disk Root Password Reset
-router.post("/:linodeId/disks/:diskId/password", (req, res) => {});
-
-// Disk Resize
-router.post("/:linodeId/disks/:diskId/resize", (req, res) => {});
 
 // Firewalls List
 router.get("/:linodeId/firewalls", (req, res) => {});
