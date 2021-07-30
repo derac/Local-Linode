@@ -224,9 +224,6 @@ router.put("/:volumeId", (req, res) => {
 // Volume Attach
 router.post("/:volumeId/attach", (req, res) => {});
 
-// Volume Clone
-router.post("/:volumeId/clone", (req, res) => {});
-
 // Volume Detach
 router.post("/:volumeId/detach", (req, res) => {});
 

@@ -42,21 +42,39 @@ router.post("/", (req, res) => {
       ],
     });
   }
-  docker
-    .createContainer({
-      Image: "ubuntu",
+  docker.createContainer(
+    {
+      Image: "ubuntu:latest",
+      Tty: true,
       name: label,
-      Tty: false,
-    })
-    .then((container) => {
-      return container.start((err, data) => {
-        console.log(err);
-        console.log(data);
-      });
-    })
-    .then((data) => {
-      return res.send(data);
-    });
+    },
+    (err, container) => {
+      if (err) {
+        return res.status(500).json({
+          errors: [
+            {
+              reason: "Container could not be created.",
+            },
+          ],
+        });
+      }
+      if (container) {
+        container.start({}, (err, data) => {
+          if (err) {
+            return res.status(500).json({
+              errors: [
+                {
+                  reason: "Container could not be started.",
+                },
+              ],
+            });
+          } else {
+            return res.send(container);
+          }
+        });
+      }
+    }
+  );
 });
 
 // Linode Delete
