@@ -150,17 +150,12 @@ router.post("/", (req, res) => {
               },
               backups: {
                 enabled: false,
-                last_successful: datetime,
-                schedule: {
-                  day: "Saturday",
-                  window: "W22",
-                },
               },
               created: datetime,
               group: "Linode-Group",
               hypervisor: "kvm",
               id: container.id,
-              image: "linode/debian10",
+              image: "linode/ubuntu20.04",
               ipv4: ["203.0.113.1", "192.0.2.1"],
               ipv6: "c001:d00d::1337/128",
               label: label,
