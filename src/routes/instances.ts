@@ -24,7 +24,16 @@ router.use("/:linodeId/configs", configs);
 
 // Linodes List
 router.get("/", (req, res) => {
-  //docker.listContainers({ all: true }).then((a) => console.log(a));
+  db.all("SELECT * FROM instances", (err, rows) => {
+    rows = rows.map((row) => ({ data: JSON.parse(row["data"]) }));
+    rows.length;
+    return res.json({
+      data: rows,
+      page: 1,
+      pages: 1,
+      results: rows.length,
+    });
+  });
 });
 
 // Linode Create
