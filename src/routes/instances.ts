@@ -78,7 +78,49 @@ router.post("/", (req, res) => {
               ],
             });
           } else {
-            return res.send(container);
+            let res_json = {
+              alerts: {
+                cpu: 180,
+                io: 10000,
+                network_in: 10,
+                network_out: 10,
+                transfer_quota: 80,
+              },
+              backups: {
+                enabled: true,
+                last_successful: "2018-01-01T00:01:01",
+                schedule: {
+                  day: "Saturday",
+                  window: "W22",
+                },
+              },
+              created: "2018-01-01T00:01:01",
+              group: "Linode-Group",
+              hypervisor: "kvm",
+              id: container.id,
+              image: "linode/debian10",
+              ipv4: ["203.0.113.1", "192.0.2.1"],
+              ipv6: "c001:d00d::1337/128",
+              label: "linode123",
+              region: "us-east",
+              specs: {
+                disk: 81920,
+                memory: 4096,
+                transfer: 4000,
+                vcpus: 2,
+              },
+              status: "running",
+              tags: ["example tag", "another example"],
+              type: "g6-standard-1",
+              updated: "2018-01-01T00:01:01",
+              watchdog_enabled: true,
+            };
+            db.run(
+              `INSERT INTO instances ('id','data') VALUES ('${
+                container.id
+              }','${JSON.stringify(res_json)}')`
+            );
+            return res.json(res_json);
           }
         });
       }
@@ -88,19 +130,42 @@ router.post("/", (req, res) => {
 
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
-  let container = docker.getContainer(req.params.linodeId);
-  container.inspect((err, data) => {
-    if (err) {
-      return res.status(500).json({
-        errors: [
-          {
-            reason: "Failed to remove container.",
-          },
-        ],
-      });
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
+        });
+      }
+      db.run(
+        `DELETE FROM instances WHERE id='${req.params.linodeId}'`,
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "linodeId", reason: err }] });
+          }
+          docker
+            .getContainer(req.params.linodeId)
+            .remove({ force: true }, (err) => {
+              if (err) {
+                return res.status(500).json({
+                  errors: [{ reason: err }],
+                });
+              } else {
+                return res.json({});
+              }
+            });
+        }
+      );
     }
-    res.send(data);
-  });
+  );
 });
 
 // Linode View
