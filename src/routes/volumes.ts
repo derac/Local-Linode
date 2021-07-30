@@ -63,52 +63,51 @@ router.post("/", (req, res) => {
     }
   } catch {
     return res.status(500).json({
-      errors: [{ field: "tags", reason: "tags must be a valid value" }],
+      errors: [{ field: "tags", reason: "tags must be a valid value." }],
     });
   }
-  docker
-    .createVolume({ name: label })
-    .then((volume) => {
-      let id: number;
-      db.get("SELECT MAX(id) from volumes", (err, row) => {
-        if (row["MAX(id)"]) {
-          id = row["MAX(id)"] + 1;
-        } else {
-          id = 1;
-        }
-        let res_json = {
-          created: datetime,
-          filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
-          id: id,
-          label: label,
-          size: size,
-          status: "active",
-          updated: datetime,
-          tags: tags,
-          region: "",
-          linode_id: "",
-          linode_label: "",
-        };
-        db.run(
-          `INSERT INTO volumes ('data') VALUES ('${JSON.stringify(res_json)}')`
-        );
-        return res.json(res_json);
+  db.get(`SELECT * FROM volumes WHERE id='${label}'`, (err, row) => {
+    if (row) {
+      return res.status(500).json({
+        errors: [
+          { field: "volumeId", reason: "volumeId (label) already exists." },
+        ],
       });
-    })
-    .catch((err) => {
-      return res.status(500).json({ errors: [{ reason: err }] });
-    });
+    } else {
+      docker
+        .createVolume({ name: label })
+        .then((volume) => {
+          let res_json = {
+            created: datetime,
+            filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
+            id: label,
+            label: label,
+            size: size,
+            status: "active",
+            updated: datetime,
+            tags: tags,
+            region: "",
+            linode_id: "",
+            linode_label: "",
+          };
+          db.run(
+            `INSERT INTO volumes ('id','data') VALUES ('${label}','${JSON.stringify(
+              res_json
+            )}')`
+          );
+          return res.json(res_json);
+        })
+        .catch((err) => {
+          return res.status(500).json({ errors: [{ reason: err }] });
+        });
+    }
+  });
 });
 
 // Volume Delete
 router.delete("/:volumeId", (req, res) => {
-  if (isNaN(req.params.volumeId as any)) {
-    return res.status(500).json({
-      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
-    });
-  }
   db.get(
-    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
     (err, row) => {
       if (err) {
         return res
@@ -117,11 +116,11 @@ router.delete("/:volumeId", (req, res) => {
       }
       if (!row) {
         return res.status(500).json({
-          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+          errors: [{ field: "volumeId", reason: "volumeId does not exist." }],
         });
       }
       let volume_label = JSON.parse(row["data"])["label"];
-      db.run(`DELETE FROM volumes WHERE id=${req.params.volumeId}`, (err) => {
+      db.run(`DELETE FROM volumes WHERE id='${req.params.volumeId}'`, (err) => {
         if (err) {
           return res
             .status(500)
@@ -136,13 +135,8 @@ router.delete("/:volumeId", (req, res) => {
 
 // Volume View
 router.get("/:volumeId", (req, res) => {
-  if (isNaN(req.params.volumeId as any)) {
-    return res.status(500).json({
-      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
-    });
-  }
   db.get(
-    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
     (err, row) => {
       if (err) {
         return res
@@ -161,11 +155,6 @@ router.get("/:volumeId", (req, res) => {
 
 // Volume Update
 router.put("/:volumeId", (req, res) => {
-  if (isNaN(req.params.volumeId as any)) {
-    return res.status(500).json({
-      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
-    });
-  }
   if (!req.headers.label) {
     return res.status(500).json({
       errors: [{ field: "label", reason: "label must be a valid value" }],
@@ -186,7 +175,7 @@ router.put("/:volumeId", (req, res) => {
   }
   let datetime: string = new Date().toISOString();
   db.get(
-    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
     (err, row) => {
       if (err) {
         return res
@@ -205,9 +194,9 @@ router.put("/:volumeId", (req, res) => {
         updated_json["tags"] = tags;
       }
       db.run(
-        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id=${
+        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id='${
           req.params.volumeId
-        }`,
+        }'`,
         (err) => {
           if (err) {
             return res
@@ -229,11 +218,6 @@ router.post("/:volumeId/detach", (req, res) => {});
 
 // Volume Resize
 router.post("/:volumeId/resize", (req, res) => {
-  if (isNaN(req.params.volumeId as any)) {
-    return res.status(500).json({
-      errors: [{ field: "volumeId", reason: "volumeId must be a valid value" }],
-    });
-  }
   if (!req.headers.size || isNaN(req.headers.size as any)) {
     return res.status(500).json({
       errors: [{ field: "size", reason: "size must be a valid value" }],
@@ -241,7 +225,7 @@ router.post("/:volumeId/resize", (req, res) => {
   }
   let datetime = new Date().toISOString();
   db.get(
-    `SELECT data FROM volumes WHERE id=${req.params.volumeId}`,
+    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
     (err, row) => {
       if (err) {
         return res
@@ -257,9 +241,9 @@ router.post("/:volumeId/resize", (req, res) => {
       updated_json["size"] = Number(req.headers.size);
       updated_json["updated"] = datetime;
       db.run(
-        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id=${
+        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id='${
           req.params.volumeId
-        }`,
+        }'`,
         (err) => {
           if (err) {
             return res
