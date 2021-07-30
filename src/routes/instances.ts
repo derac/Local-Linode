@@ -39,8 +39,68 @@ router.get("/", (req, res) => {
 // Linode Create
 router.post("/", (req, res) => {
   let label: string = req.headers.label
-    ? (req.headers.label as string)
-    : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+      ? (req.headers.label as string)
+      : [...Array(32)]
+          .map(() => (~~(Math.random() * 36)).toString(36))
+          .join(""),
+    datetime: string = new Date().toISOString(),
+    tags: string[] = [];
+
+  // process tags header
+  try {
+    if (req.headers.tags) {
+      tags = JSON.parse(req.headers.tags as string);
+      if (!tags?.every((el) => typeof el === "string")) {
+        throw "All values of tags array must be strings";
+      }
+    }
+  } catch {
+    return res.status(500).json({
+      errors: [{ field: "tags", reason: "tags must be a valid value." }],
+    });
+  }
+
+  // check type header for validity
+  if (!req.headers.type) {
+    return res.status(500).json({
+      errors: [{ field: "type", reason: "type is a required request header." }],
+    });
+  }
+  let typeData = types.data.filter((type) => type.id == req.headers.type);
+  if (!typeData.length) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "type",
+          reason: "type was not found in allowed types list.",
+        },
+      ],
+    });
+  }
+
+  // check region header for validity
+  if (!req.headers.region) {
+    return res.status(500).json({
+      errors: [
+        { field: "region", reason: "region is a required request header." },
+      ],
+    });
+  }
+  let regionData = regions.data.filter(
+    (region) => region.id == req.headers.region
+  );
+  if (!regionData.length) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "region",
+          reason: "region was not found in allowed regions list.",
+        },
+      ],
+    });
+  }
+
+  // check the label header for validity
   if (!(2 < label.length && label.length < 33)) {
     return res.status(500).json({
       errors: [
@@ -51,6 +111,8 @@ router.post("/", (req, res) => {
       ],
     });
   }
+
+  // start creating the container
   docker.createContainer(
     {
       Image: "ubuntu:latest",
@@ -87,32 +149,32 @@ router.post("/", (req, res) => {
                 transfer_quota: 80,
               },
               backups: {
-                enabled: true,
-                last_successful: "2018-01-01T00:01:01",
+                enabled: false,
+                last_successful: datetime,
                 schedule: {
                   day: "Saturday",
                   window: "W22",
                 },
               },
-              created: "2018-01-01T00:01:01",
+              created: datetime,
               group: "Linode-Group",
               hypervisor: "kvm",
               id: container.id,
               image: "linode/debian10",
               ipv4: ["203.0.113.1", "192.0.2.1"],
               ipv6: "c001:d00d::1337/128",
-              label: "linode123",
-              region: "us-east",
+              label: label,
+              region: req.headers.region,
               specs: {
-                disk: 81920,
-                memory: 4096,
-                transfer: 4000,
-                vcpus: 2,
+                disk: typeData[0].disk,
+                memory: typeData[0].memory,
+                transfer: typeData[0].transfer,
+                vcpus: typeData[0].vcpus,
               },
               status: "running",
-              tags: ["example tag", "another example"],
-              type: "g6-standard-1",
-              updated: "2018-01-01T00:01:01",
+              tags: tags,
+              type: req.headers.type,
+              updated: datetime,
               watchdog_enabled: true,
             };
             db.run(
