@@ -10,10 +10,10 @@ if (!fs.existsSync(db_file)) {
   fs.openSync(db_file, "w");
   const db = new sqlite3.Database(db_file);
   db.run(
-    'CREATE TABLE "volumes" ("id"	INTEGER NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id" AUTOINCREMENT) );'
+    'CREATE TABLE "volumes" ("id"	TEXT NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id") );'
   );
   db.run(
-    'CREATE TABLE "instances" ("id"	INTEGER NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id" AUTOINCREMENT) );'
+    'CREATE TABLE "instances" ("id"	TEXT NOT NULL UNIQUE, "data"	JSON NOT NULL, PRIMARY KEY("id") );'
   );
 }
 
