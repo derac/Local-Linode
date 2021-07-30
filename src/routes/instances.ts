@@ -88,7 +88,19 @@ router.post("/", (req, res) => {
 
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
-  //docker.getContainer()
+  let container = docker.getContainer(req.params.linodeId);
+  container.inspect((err, data) => {
+    if (err) {
+      return res.status(500).json({
+        errors: [
+          {
+            reason: "Failed to remove container.",
+          },
+        ],
+      });
+    }
+    res.send(data);
+  });
 });
 
 // Linode View
