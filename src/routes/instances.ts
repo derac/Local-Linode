@@ -169,7 +169,24 @@ router.delete("/:linodeId", (req, res) => {
 });
 
 // Linode View
-router.get("/:linodeId", (req, res) => {});
+router.get("/:linodeId", (req, res) => {
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      return res.json(JSON.parse(row["data"]));
+    }
+  );
+});
 
 // Linode Update
 router.put("/:linodeId", (req, res) => {});
