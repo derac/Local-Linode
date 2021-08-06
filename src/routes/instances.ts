@@ -315,7 +315,46 @@ router.put("/:linodeId", (req, res) => {
 });
 
 // Linode Boot
-router.post("/:linodeId/boot", (req, res) => {});
+router.post("/:linodeId/boot", (req, res) => {
+  docker.getContainer(req.params.linodeId).start({}, (err) => {
+    if (err) {
+      return res.status(500).json({
+        field: "linodeId",
+        errors: [{ reason: err }],
+      });
+    } else {
+      db.get(
+        `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+        (err, row) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "linodeId", reason: err }] });
+          }
+          if (!row) {
+            return res.status(500).json({
+              errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+            });
+          }
+          let updated_json = JSON.parse(row["data"]);
+          updated_json["status"] = "running";
+          db.run(
+            `UPDATE instances SET data='${JSON.stringify(updated_json)}' WHERE id='${
+              req.params.linodeId
+            }'`,
+            (err) => {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ errors: [{ field: "linodeId", reason: err }] });
+              }
+              return res.json({});
+            }
+          );
+        }
+      );
+    }
+  })});
 
 // Firewalls List
 router.get("/:linodeId/firewalls", (req, res) => {});
