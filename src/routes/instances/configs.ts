@@ -2,8 +2,8 @@ import express from "express";
 
 const router = express.Router({ mergeParams: true });
 
-// ===== Linode Instances Disks API =====
-// /v4/linode/instances/:linodeId/disks
+// ===== Linode Instances Configs API =====
+// /v4/linode/instances/:linodeId/configs
 
 // Configuration Profiles List
 router.get("/", (req, res) => {});
