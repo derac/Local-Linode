@@ -247,7 +247,72 @@ router.get("/:linodeId", (req, res) => {
 });
 
 // Linode Update
-router.put("/:linodeId", (req, res) => {});
+router.put("/:linodeId", (req, res) => {
+  let label: string | null = req.headers.label
+      ? (req.headers.label as string)
+      : null,
+      tags: string[] | null = null;
+  if (label) {
+    // check the label header for validity
+    if (!(2 < label.length && label.length < 33)) {
+      return res.status(500).json({
+        errors: [
+          {
+            field: "label",
+            reason: "label must be between 2 and 32 characters.",
+          },
+        ],
+      });
+    }
+  }
+  // process tags header if present
+  try {
+    if (req.headers.tags) {
+      tags = JSON.parse(req.headers.tags as string);
+      if (!tags?.every((el) => typeof el === "string")) {
+        throw "All values of tags array must be strings";
+      }
+    }
+  } catch {
+    return res.status(500).json({
+      errors: [{ field: "tags", reason: "tags must be a valid value." }],
+    });
+  }
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      let updated_json = JSON.parse(row["data"]);
+      if (label) {
+        updated_json["label"] = label;
+      }
+      if (tags) {
+        updated_json["tags"] = tags;
+      }
+      db.run(
+        `UPDATE instances SET data='${JSON.stringify(updated_json)}' WHERE id='${
+          req.params.linodeId
+        }'`,
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "linodeId", reason: err }] });
+          }
+          return res.json(updated_json);
+        }
+      );
+    });
+});
 
 // Linode Boot
 router.post("/:linodeId/boot", (req, res) => {});
