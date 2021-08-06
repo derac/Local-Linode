@@ -2,8 +2,10 @@
 
 ## Setup
 
+1. install docker on the system
+1. In bash: `docker pull ubuntu:latest`
 1. `npm install`
-2. `npm run build`
+1. `npm run build`
 1. `npm start`
 
 # Explanation
