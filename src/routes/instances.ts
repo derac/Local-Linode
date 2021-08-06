@@ -124,7 +124,7 @@ router.post("/", (req, res) => {
         return res.status(500).json({
           errors: [
             {
-              reason: "Container could not be created.",
+              reason: err,
             },
           ],
         });
@@ -135,54 +135,55 @@ router.post("/", (req, res) => {
             return res.status(500).json({
               errors: [
                 {
-                  reason: "Container could not be started.",
+                  reason: err,
                 },
               ],
             });
           } else {
-            let res_json = {
-              alerts: {
-                cpu: 180,
-                io: 10000,
-                network_in: 10,
-                network_out: 10,
-                transfer_quota: 80,
-              },
-              backups: {
-                enabled: false,
-              },
-              created: datetime,
-              group: "Linode-Group",
-              hypervisor: "kvm",
-              id: container.id,
-              image: "linode/ubuntu20.04",
-              ipv4: ["203.0.113.1", "192.0.2.1"],
-              ipv6: "c001:d00d::1337/128",
-              label: label,
-              region: req.headers.region,
-              specs: {
-                disk: typeData[0].disk,
-                memory: typeData[0].memory,
-                transfer: typeData[0].transfer,
-                vcpus: typeData[0].vcpus,
-              },
-              status: "running",
-              tags: tags,
-              type: req.headers.type,
-              updated: datetime,
-              watchdog_enabled: true,
-            };
-            db.run(
-              `INSERT INTO instances ('id','data') VALUES ('${
-                container.id
-              }','${JSON.stringify(res_json)}')`
-            );
-            return res.json(res_json);
+            container.inspect().then((data) => {
+              let res_json = {
+                alerts: {
+                  cpu: 180,
+                  io: 10000,
+                  network_in: 10,
+                  network_out: 10,
+                  transfer_quota: 80,
+                },
+                backups: {
+                  enabled: false,
+                },
+                created: datetime,
+                group: "Linode-Group",
+                hypervisor: "kvm",
+                id: container.id,
+                image: "linode/ubuntu20.04",
+                ipv4: data.NetworkSettings.IPAddress,
+                ipv6: data.NetworkSettings.GlobalIPv6Address,
+                label: label,
+                region: req.headers.region,
+                specs: {
+                  disk: typeData[0].disk,
+                  memory: typeData[0].memory,
+                  transfer: typeData[0].transfer,
+                  vcpus: typeData[0].vcpus,
+                },
+                status: "running",
+                tags: tags,
+                type: req.headers.type,
+                updated: datetime,
+                watchdog_enabled: true,
+              };
+              db.run(
+                `INSERT INTO instances ('id','data') VALUES ('${
+                  container.id
+                }','${JSON.stringify(res_json)}')`
+              );
+              return res.json(res_json);
+            });
           }
         });
       }
-    }
-  );
+  });
 });
 
 // Linode Delete
