@@ -3,11 +3,12 @@
 ## Setup
 
 1. `npm install`
+2. `npm run build`
 1. `npm start`
 
 # Explanation
 
-This project uses Docker as a local backend for the Linode API. Much of the functionality of the Instances, Volumes, and Types APIs are implemented.
+This project uses Docker as a local backend for the Linode API. Much of the functionality of the Instances, Volumes, and Types APIs are implemented. This is only tested to work on Linux. Local networking doesn't work with Docker for Windows.
 
 # API Reference Pages
 
