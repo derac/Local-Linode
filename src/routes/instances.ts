@@ -526,7 +526,24 @@ router.post("/:linodeId/shutdown", (req, res) => {
 });
 
 // Linode Upgrade
-router.post("/:linodeId/mutate", (req, res) => {});
+router.post("/:linodeId/mutate", (req, res) => {
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      return res.json({});
+    }
+  );
+});
 
 // Linode Root Password Reset
 router.post("/:linodeId/password", (req, res) => {});
