@@ -549,7 +549,24 @@ router.post("/:linodeId/mutate", (req, res) => {
 router.post("/:linodeId/password", (req, res) => {});
 
 // Linode Reboot
-router.post("/:linodeId/reboot", (req, res) => {});
+router.post("/:linodeId/reboot", (req, res) => {
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      return res.json({});
+    }
+  );
+});
 
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
