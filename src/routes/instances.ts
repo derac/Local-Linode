@@ -363,16 +363,6 @@ router.post("/:linodeId/boot", (req, res) => {
   });
 });
 
-// Firewalls List
-router.get("/:linodeId/firewalls", (req, res) => {
-  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
-});
-
-// Networking Information List
-router.get("/:linodeId/ips", (req, res) => {
-  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
-});
-
 // IP Address View
 router.get("/:linodeId/ips/:address", (req, res) => {
   db.get(
@@ -429,21 +419,6 @@ router.get("/:linodeId/ips/:address", (req, res) => {
     }
   );
 });
-
-// IP Address Update
-router.put("/:linodeId/ips/:address", (req, res) => {});
-
-// Linode Upgrade
-router.post("/:linodeId/mutate", (req, res) => {});
-
-// Linode Root Password Reset
-router.post("/:linodeId/password", (req, res) => {});
-
-// Linode Reboot
-router.post("/:linodeId/reboot", (req, res) => {});
-
-// Linode Rebuild
-router.post("/:linodeId/rebuild", (req, res) => {});
 
 // Linode Resize
 router.post("/:linodeId/resize", (req, res) => {
@@ -550,7 +525,113 @@ router.post("/:linodeId/shutdown", (req, res) => {
   });
 });
 
+// Linode Upgrade
+router.post("/:linodeId/mutate", (req, res) => {});
+
+// Linode Root Password Reset
+router.post("/:linodeId/password", (req, res) => {});
+
+// Linode Reboot
+router.post("/:linodeId/reboot", (req, res) => {});
+
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
+
+// ===== not implemented =====
+
+// Linode Rebuild
+router.post("/:linodeId/rebuild", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// IP Address Update
+router.put("/:linodeId/ips/:address", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Firewalls List
+router.get("/:linodeId/firewalls", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Networking Information List
+router.get("/:linodeId/ips", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Backups List
+router.get("/:linodeId/backups", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Snapshot Create
+router.post("/:linodeId/backups", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Backups Cancel
+router.post("/:linodeId/backups/cancel", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Backups Enable
+router.post("/:linodeId/backups/enable", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Backup View
+router.get("/:linodeId/backups/:backupId", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Backup Restore
+router.post("/:linodeId/backups/:backupId/restore", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Linode Clone
+router.post("/:linodeId/clone", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// IPv4 Address Allocate
+router.post("/:linodeId/ips", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// IPv4 Address Delete
+router.delete("/:linodeId/ips/:address", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// DC Migration/Pending Host Migration Initiate
+router.post("/:linodeId/migrate", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Linode Boot Into Rescue Mode
+router.post("/:linodeId/rescue", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Linode Statistics View
+router.get("/:linodeId/stats", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Statistics View (year/month)
+router.get("/:linodeId/stats/:year/:month", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Linode Statistics View
+router.get("/:linodeId/transfer", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
+// Statistics View (year/month)
+router.get("/:linodeId/transfer/:year/:month", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 export default router;
