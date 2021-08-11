@@ -183,7 +183,8 @@ router.post("/", (req, res) => {
           }
         });
       }
-  });
+    }
+  );
 });
 
 // Linode Delete
@@ -251,7 +252,7 @@ router.put("/:linodeId", (req, res) => {
   let label: string | null = req.headers.label
       ? (req.headers.label as string)
       : null,
-      tags: string[] | null = null;
+    tags: string[] | null = null;
   if (label) {
     // check the label header for validity
     if (!(2 < label.length && label.length < 33)) {
@@ -299,9 +300,9 @@ router.put("/:linodeId", (req, res) => {
         updated_json["tags"] = tags;
       }
       db.run(
-        `UPDATE instances SET data='${JSON.stringify(updated_json)}' WHERE id='${
-          req.params.linodeId
-        }'`,
+        `UPDATE instances SET data='${JSON.stringify(
+          updated_json
+        )}' WHERE id='${req.params.linodeId}'`,
         (err) => {
           if (err) {
             return res
@@ -311,7 +312,8 @@ router.put("/:linodeId", (req, res) => {
           return res.json(updated_json);
         }
       );
-    });
+    }
+  );
 });
 
 // Linode Boot
@@ -333,15 +335,17 @@ router.post("/:linodeId/boot", (req, res) => {
           }
           if (!row) {
             return res.status(500).json({
-              errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+              errors: [
+                { field: "linodeId", reason: "linodeId does not exist" },
+              ],
             });
           }
           let updated_json = JSON.parse(row["data"]);
           updated_json["status"] = "running";
           db.run(
-            `UPDATE instances SET data='${JSON.stringify(updated_json)}' WHERE id='${
-              req.params.linodeId
-            }'`,
+            `UPDATE instances SET data='${JSON.stringify(
+              updated_json
+            )}' WHERE id='${req.params.linodeId}'`,
             (err) => {
               if (err) {
                 return res
@@ -354,16 +358,79 @@ router.post("/:linodeId/boot", (req, res) => {
         }
       );
     }
-  })});
+  });
+});
 
 // Firewalls List
-router.get("/:linodeId/firewalls", (req, res) => {});
+router.get("/:linodeId/firewalls", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // Networking Information List
-router.get("/:linodeId/ips", (req, res) => {});
+router.get("/:linodeId/ips", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // IP Address View
-router.get("/:linodeId/ips/:address", (req, res) => {});
+router.get("/:linodeId/ips/:address", (req, res) => {
+  if (!req.params.linodeId) {
+    return res.status(500).json({
+      errors: [
+        { field: "linodeId", reason: "linodeId is a required request header." },
+      ],
+    });
+  }
+  if (!req.params.address) {
+    return res.status(500).json({
+      errors: [
+        { field: "address", reason: "address is a required request header." },
+      ],
+    });
+  }
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      let json_data = JSON.parse(row["data"]);
+      let container = docker
+        .getContainer(json_data["id"])
+        .inspect()
+        .then((data) => {
+          const createNetmaskAddr = (bitCount: number) => {
+            let mask = [];
+            let n;
+            for (let i = 0; i < 4; i++) {
+              n = Math.min(bitCount, 8);
+              mask.push(256 - Math.pow(2, 8 - n));
+              bitCount -= n;
+            }
+            return mask.join(".");
+          };
+          let json_response = {
+            address: json_data["ipv4"],
+            gateway: data.NetworkSettings.Gateway,
+            linode_id: json_data["id"],
+            prefix: data.NetworkSettings.IPPrefixLen,
+            public: true,
+            rdns: "",
+            region: json_data["region"],
+            subnet_mask: createNetmaskAddr(data.NetworkSettings.IPPrefixLen),
+            type: "ipv4",
+          };
+          return res.json(json_response);
+        });
+    }
+  );
+});
 
 // IP Address Update
 router.put("/:linodeId/ips/:address", (req, res) => {});
@@ -402,15 +469,17 @@ router.post("/:linodeId/shutdown", (req, res) => {
           }
           if (!row) {
             return res.status(500).json({
-              errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+              errors: [
+                { field: "linodeId", reason: "linodeId does not exist" },
+              ],
             });
           }
           let updated_json = JSON.parse(row["data"]);
           updated_json["status"] = "stopped";
           db.run(
-            `UPDATE instances SET data='${JSON.stringify(updated_json)}' WHERE id='${
-              req.params.linodeId
-            }'`,
+            `UPDATE instances SET data='${JSON.stringify(
+              updated_json
+            )}' WHERE id='${req.params.linodeId}'`,
             (err) => {
               if (err) {
                 return res
@@ -423,7 +492,7 @@ router.post("/:linodeId/shutdown", (req, res) => {
         }
       );
     }
-  })
+  });
 });
 
 // Linode's Volumes List
