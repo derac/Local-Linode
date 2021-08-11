@@ -299,6 +299,8 @@ router.put("/:linodeId", (req, res) => {
       if (tags) {
         updated_json["tags"] = tags;
       }
+      let datetime = new Date().toISOString();
+      updated_json["updated"] = datetime;
       db.run(
         `UPDATE instances SET data='${JSON.stringify(
           updated_json
@@ -373,20 +375,6 @@ router.get("/:linodeId/ips", (req, res) => {
 
 // IP Address View
 router.get("/:linodeId/ips/:address", (req, res) => {
-  if (!req.params.linodeId) {
-    return res.status(500).json({
-      errors: [
-        { field: "linodeId", reason: "linodeId is a required request header." },
-      ],
-    });
-  }
-  if (!req.params.address) {
-    return res.status(500).json({
-      errors: [
-        { field: "address", reason: "address is a required request header." },
-      ],
-    });
-  }
   db.get(
     `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
     (err, row) => {
@@ -401,6 +389,16 @@ router.get("/:linodeId/ips/:address", (req, res) => {
         });
       }
       let json_data = JSON.parse(row["data"]);
+      if (req.params.address != json_data["ipv4"]) {
+        return res.status(500).json({
+          errors: [
+            {
+              field: "address",
+              reason: "address does not exist on the node specified.",
+            },
+          ],
+        });
+      }
       let container = docker
         .getContainer(json_data["id"])
         .inspect()
@@ -448,7 +446,64 @@ router.post("/:linodeId/reboot", (req, res) => {});
 router.post("/:linodeId/rebuild", (req, res) => {});
 
 // Linode Resize
-router.post("/:linodeId/resize", (req, res) => {});
+router.post("/:linodeId/resize", (req, res) => {
+  // check type header for validity
+  if (!req.headers.type) {
+    return res.status(500).json({
+      errors: [{ field: "type", reason: "type is a required request header." }],
+    });
+  }
+  let typeData = types.data.filter((type) => type.id == req.headers.type);
+  if (!typeData.length) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "type",
+          reason: "type was not found in allowed types list.",
+        },
+      ],
+    });
+  }
+
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      let updated_json = JSON.parse(row["data"]);
+      updated_json["type"] = req.headers.type;
+      updated_json["specs"] = {
+        disk: typeData[0].disk,
+        memory: typeData[0].memory,
+        transfer: typeData[0].transfer,
+        vcpus: typeData[0].vcpus,
+      };
+      let datetime = new Date().toISOString();
+      updated_json["updated"] = datetime;
+      db.run(
+        `UPDATE instances SET data='${JSON.stringify(
+          updated_json
+        )}' WHERE id='${req.params.linodeId}'`,
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "linodeId", reason: err }] });
+          }
+          return res.json(updated_json);
+        }
+      );
+    }
+  );
+});
 
 // Linode Shut Down
 router.post("/:linodeId/shutdown", (req, res) => {
