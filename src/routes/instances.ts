@@ -1,7 +1,6 @@
 import path from "path";
 
 import express from "express";
-import Docker from "dockerode";
 import sqlite3 from "sqlite3";
 
 import types from "../data/types.json";
@@ -9,9 +8,8 @@ import regions from "../data/regions.json";
 import disks from "./instances/disks";
 import configs from "./instances/configs";
 
+const virtualbox = require("virtualbox");
 const router = express.Router();
-const docker = new Docker();
-
 const db = new sqlite3.Database(
   path.join(__dirname, "../data/database.sqlite3")
 );
@@ -35,6 +33,8 @@ router.get("/", (req, res) => {
     });
   });
 });
+
+/*
 
 // Linode Create
 router.post("/", (req, res) => {
@@ -546,9 +546,12 @@ router.post("/:linodeId/mutate", (req, res) => {
 });
 
 // Linode Root Password Reset
+// NOTE - Linode requires the machine to be shut down to change the pass.
+// This can't be done with Docker afaik, the container must be up.
 router.post("/:linodeId/password", (req, res) => {});
 
 // Linode Reboot
+// TO DO - add config logic if needed
 router.post("/:linodeId/reboot", (req, res) => {
   db.get(
     `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
@@ -570,6 +573,9 @@ router.post("/:linodeId/reboot", (req, res) => {
 
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
+
+
+*/
 
 // ===== not implemented =====
 

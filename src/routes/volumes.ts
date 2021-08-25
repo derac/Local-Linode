@@ -1,19 +1,19 @@
 import path from "path";
 
 import express from "express";
-import Docker from "dockerode";
 import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
 
 const router = express.Router();
-const docker = new Docker();
 const db = new sqlite3.Database(
   path.join(__dirname, "../data/database.sqlite3")
 );
 
 // ===== Linode Volumes API =====
 // /v4/volumes
+
+/*
 
 // Volumes List
 router.get("/", (req, res) => {
@@ -256,5 +256,7 @@ router.post("/:volumeId/resize", (req, res) => {
     }
   );
 });
+
+*/
 
 export default router;
