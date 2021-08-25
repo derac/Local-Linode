@@ -5,7 +5,7 @@ import instances from "./routes/instances";
 import volumes from "./routes/volumes";
 
 // run setup code
-import setup from "./setup";
+import "./setup";
 
 const app = express();
 const PersonalAccessToken = "testtokenabcdefg";

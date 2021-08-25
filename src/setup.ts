@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 
 import sqlite3 from "sqlite3";
-import Docker from "dockerode";
 
 // make database if it doesn't exist
 const db_file = path.join(__dirname, "./data/database.sqlite3");
