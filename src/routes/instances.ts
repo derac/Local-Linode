@@ -136,7 +136,7 @@ router.post("/", (req, res) => {
           });
         } else {
           virtualbox.guestproperty.get(
-            { vm: label, property: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
+            { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
             (address: string) => {
               let res_json = { ip: address };
               /*
@@ -177,6 +177,7 @@ router.post("/", (req, res) => {
               container.id
             }','${JSON.stringify(res_json)}')`
           );*/
+              console.log(res_json);
               return res.json(res_json);
             }
           );
