@@ -22,7 +22,7 @@ This project uses VirtualBox as a local backend for the Linode API. Much of the 
 # API Reference Pages
 
 - [Linode API](https://www.linode.com/docs/api/)
-- [sqlite3 library](https://github.com/mapbox/node-sqlite3/wiki/API)
+- [node-sqlite3](https://github.com/mapbox/node-sqlite3/wiki/API)
 - [node-virtualbox](https://github.com/Node-Virtualization/node-virtualbox)
   - Look at the source for most up-to-date API usage info
 - [vboxmanage](https://www.virtualbox.org/manual/ch08.html)
