@@ -111,7 +111,7 @@ router.post("/", (req, res) => {
   }
 
   // start creating the container
-  virtualbox.clone(
+  virtualbox.vmImport(
     "F:\\downloads\\ubuntu_server_template.ova",
     { vmname: label, cpus: 1, memory: 1024 },
     (err: Error) => {
