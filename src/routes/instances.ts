@@ -114,7 +114,7 @@ router.post("/", (req, res) => {
   // start creating the container
   virtualbox.vmImport(
     "F:\\downloads\\ubuntu_server_template.ova",
-    { vmname: label, cpus: 1, memory: 1024 }, // there aren't error checks when creating invalid machines or starting them :( might not be necessary
+    { vmname: label, cpus: typeData[0].vcpus, memory: typeData[0].memory }, // there aren't error checks when creating invalid machines or starting them :( might not be necessary
     (err: Error) => {
       if (err) {
         return res.status(500).json({
@@ -129,71 +129,62 @@ router.post("/", (req, res) => {
       // like ip until it's up, can set those later
       virtualbox.start(label, (err: Error) => {
         if (err) {
-          return res.status(500).json({
-            errors: [
-              {
-                reason: err,
-              },
-            ],
-          });
+          return res.status(500).json({ errors: [{ reason: err }] });
         }
         // Retry getting the IP, will only work when machine is fully up.
         (function retry_loop() {
           setTimeout(() => {
             virtualbox.guestproperty.get(
               { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-              ( address: any ) => {
-                console.log("Tried getting IP")
-                if (address) {
-                  let res_json = { ip: address };
+              (ipv4_address: string | undefined) => {
+                if (ipv4_address) {
+                  let res_json = {
+                    alerts: {
+                      cpu: 180,
+                      io: 10000,
+                      network_in: 10,
+                      network_out: 10,
+                      transfer_quota: 80,
+                    },
+                    backups: {
+                      enabled: false,
+                    },
+                    created: datetime,
+                    group: "Linode-Group",
+                    hypervisor: "kvm",
+                    id: label,
+                    image: "linode/ubuntu20.04",
+                    ipv4: ipv4_address,
+                    ipv6: "",
+                    label: label,
+                    region: req.headers.region,
+                    specs: {
+                      disk: typeData[0].disk, // TODO: utilize disk size on creation?
+                      memory: typeData[0].memory,
+                      transfer: typeData[0].transfer,
+                      vcpus: typeData[0].vcpus,
+                    },
+                    status: "running",
+                    tags: tags,
+                    type: req.headers.type,
+                    updated: datetime,
+                    watchdog_enabled: true,
+                  };
+                  db.run(
+                    `INSERT INTO instances ('id','data') VALUES ('${label}','${JSON.stringify(
+                      res_json
+                    )}')`
+                  );
                   console.log(res_json);
                   return res.json(res_json);
+                } else {
+                  retry_loop();
                 }
-                else { retry_loop(); }
-              })          
-          }, 100)
+              }
+            );
+          }, 100);
         })();
-
-        /*
-        let res_json = {
-          alerts: {
-            cpu: 180,
-            io: 10000,
-            network_in: 10,
-            network_out: 10,
-            transfer_quota: 80,
-          },
-          backups: {
-            enabled: false,
-          },
-          created: datetime,
-          group: "Linode-Group",
-          hypervisor: "kvm",
-          id: container.id,
-          image: "linode/ubuntu20.04",
-          ipv4: data.NetworkSettings.IPAddress,
-          ipv6: data.NetworkSettings.GlobalIPv6Address,
-          label: label,
-          region: req.headers.region,
-          specs: {
-            disk: typeData[0].disk,
-            memory: typeData[0].memory,
-            transfer: typeData[0].transfer,
-            vcpus: typeData[0].vcpus,
-          },
-          status: "running",
-          tags: tags,
-          type: req.headers.type,
-          updated: datetime,
-          watchdog_enabled: true,
-        };
-        db.run(
-          `INSERT INTO instances ('id','data') VALUES ('${
-            container.id
-          }','${JSON.stringify(res_json)}')`
-        );*/
-          }
-        );
+      });
     }
   );
 });
