@@ -10,7 +10,23 @@
 
 _VirtualBox setup_
 
-1. TODO: figure out where to put template OVF so we don't need to set that up
+1. TODO: figure out where to put template OVF so we don't need to set that up. commands used below, may change default osboxes password:
+
+```bash
+# install virtualbox guest additions from ubuntu multiverse repo
+sudo apt update
+sudo apt upgrade
+sudo add-apt-repository multiverse
+sudo apt install virtualbox-guest-dkms virtualbox-guest-x11
+# install and enable ssh server, allow through firewall, enable firewall
+sudo apt install openssh-server
+sudo ufw allow ssh
+sudo ufw enable
+sudo systemctl enable sshd
+# shutdown system to prepare for export to OVA
+sudo shutdown -P 0
+```
+
 2. figure out networking
    - Host-only networking will be best
    - Need to test network setup more on virtualbox, the user may need to adjust the ip settings for the host-only network to attach to.
