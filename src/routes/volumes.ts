@@ -3,7 +3,6 @@ import path from "path";
 import express from "express";
 import sqlite3 from "sqlite3";
 
-import regions from "../data/regions.json";
 import { virtualbox, default_machine_folder } from "../setup/virtualbox";
 
 const router = express.Router();
