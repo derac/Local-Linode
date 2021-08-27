@@ -409,6 +409,48 @@ router.post("/:linodeId/shutdown", (req, res) => {
   });
 });
 
+// Linode Reboot
+// TODO: add config logic if needed
+router.post("/:linodeId/reboot", (req, res) => {
+  let label = req.params.linodeId;
+  db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "linodeId", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+      });
+    }
+    virtualbox.reset(label, (err: Error) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      // for simplicity, only return once machine is fully booted, check IP to find this state
+      setTimeout(() => {
+        (function retry_loop() {
+          setTimeout(() => {
+            virtualbox.guestproperty.get(
+              { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
+              (ipv4_address: string) => {
+                if (ipv4_address) {
+                  return res.json({});
+                } else {
+                  retry_loop();
+                }
+              }
+            );
+          }, 100);
+        })();
+      }, 100);
+    });
+  });
+});
+
 // IP Address View
 router.get("/:linodeId/ips/:address", (req, res) => {
   let label = req.params.linodeId;
@@ -456,8 +498,7 @@ router.get("/:linodeId/ips/:address", (req, res) => {
   });
 });
 
-/*
-
+// TODO: actually resizing the disk by executing commands
 // Linode Resize
 router.post("/:linodeId/resize", (req, res) => {
   // check type header for validity
@@ -518,36 +559,6 @@ router.post("/:linodeId/resize", (req, res) => {
   );
 });
 
-// Linode Root Password Reset
-// NOTE - Linode requires the machine to be shut down to change the pass.
-// This can't be done with Docker afaik, the container must be up.
-router.post("/:linodeId/password", (req, res) => {});
-
-// Linode Reboot
-// TO DO - add config logic if needed
-router.post("/:linodeId/reboot", (req, res) => {
-  db.get(
-    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
-    (err, row) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "linodeId", reason: err }] });
-      }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
-        });
-      }
-      return res.json({});
-    }
-  );
-});
-
-
-
-*/
-
 // Linode Upgrade
 router.post("/:linodeId/mutate", (req, res) => {
   db.get(
@@ -570,6 +581,10 @@ router.post("/:linodeId/mutate", (req, res) => {
 
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
+
+// Linode Root Password Reset
+// NOTE - Linode requires the machine to be shut down to change the pass.
+router.post("/:linodeId/password", (req, res) => {});
 
 // ===== not implemented =====
 
