@@ -175,7 +175,6 @@ router.post("/", (req, res) => {
                       res_json
                     )}')`
                   );
-                  console.log(res_json);
                   return res.json(res_json);
                 } else {
                   retry_loop();
@@ -212,11 +211,6 @@ router.delete("/:linodeId", (req, res) => {
           .json({ errors: [{ field: "linodeId", reason: err }] });
       }
       virtualbox.poweroff(label, (err: Error | null) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ errors: [{ field: "linodeId", reason: err }] });
-        }
         virtualbox.vboxmanage(
           ["unregistervm", label, "--delete"],
           (err: Error, stdout: string) => {
@@ -225,7 +219,6 @@ router.delete("/:linodeId", (req, res) => {
                 errors: [{ reason: err }],
               });
             } else {
-              console.log(stdout);
               return res.json({});
             }
           }
