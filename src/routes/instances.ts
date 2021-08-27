@@ -409,64 +409,54 @@ router.post("/:linodeId/shutdown", (req, res) => {
   });
 });
 
-/*
-
 // IP Address View
 router.get("/:linodeId/ips/:address", (req, res) => {
-  db.get(
-    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
-    (err, row) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "linodeId", reason: err }] });
-      }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
-        });
-      }
-      let json_data = JSON.parse(row["data"]);
-      if (req.params.address != json_data["ipv4"]) {
-        return res.status(500).json({
-          errors: [
-            {
-              field: "address",
-              reason: "address does not exist on the node specified.",
-            },
-          ],
-        });
-      }
-      let container = docker
-        .getContainer(json_data["id"])
-        .inspect()
-        .then((data) => {
-          const createNetmaskAddr = (bitCount: number) => {
-            let mask = [];
-            let n;
-            for (let i = 0; i < 4; i++) {
-              n = Math.min(bitCount, 8);
-              mask.push(256 - Math.pow(2, 8 - n));
-              bitCount -= n;
-            }
-            return mask.join(".");
-          };
-          let json_response = {
-            address: json_data["ipv4"],
-            gateway: data.NetworkSettings.Gateway,
-            linode_id: json_data["id"],
-            prefix: data.NetworkSettings.IPPrefixLen,
-            public: true,
-            rdns: "",
-            region: json_data["region"],
-            subnet_mask: createNetmaskAddr(data.NetworkSettings.IPPrefixLen),
-            type: "ipv4",
-          };
-          return res.json(json_response);
-        });
+  let label = req.params.linodeId;
+  db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "linodeId", reason: err }] });
     }
-  );
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+      });
+    }
+    let json_data = JSON.parse(row["data"]);
+    if (req.params.address != json_data["ipv4"]) {
+      return res.status(500).json({
+        errors: [
+          {
+            field: "address",
+            reason: "address does not exist on the node specified.",
+          },
+        ],
+      });
+    }
+    virtualbox.guestproperty.get(
+      { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/Netmask" },
+      (netmask: string) => {
+        let json_response = {
+          address: json_data["ipv4"],
+          gateway: "0.0.0.0",
+          linode_id: json_data["id"],
+          prefix: netmask
+            .split(".")
+            .reduce((c, o) => c - Math.log2(256 - +o), 32),
+          public: true,
+          rdns: "",
+          region: json_data["region"],
+          subnet_mask: netmask,
+          type: "ipv4",
+        };
+        return res.json(json_response);
+      }
+    );
+  });
 });
+
+/*
 
 // Linode Resize
 router.post("/:linodeId/resize", (req, res) => {
@@ -528,26 +518,6 @@ router.post("/:linodeId/resize", (req, res) => {
   );
 });
 
-// Linode Upgrade
-router.post("/:linodeId/mutate", (req, res) => {
-  db.get(
-    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
-    (err, row) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "linodeId", reason: err }] });
-      }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
-        });
-      }
-      return res.json({});
-    }
-  );
-});
-
 // Linode Root Password Reset
 // NOTE - Linode requires the machine to be shut down to change the pass.
 // This can't be done with Docker afaik, the container must be up.
@@ -574,11 +544,32 @@ router.post("/:linodeId/reboot", (req, res) => {
   );
 });
 
-// Linode's Volumes List
-router.get("/:linodeId/volumes", (req, res) => {});
 
 
 */
+
+// Linode Upgrade
+router.post("/:linodeId/mutate", (req, res) => {
+  db.get(
+    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      return res.json({});
+    }
+  );
+});
+
+// Linode's Volumes List
+router.get("/:linodeId/volumes", (req, res) => {});
 
 // ===== not implemented =====
 
