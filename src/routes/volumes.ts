@@ -94,21 +94,22 @@ router.post("/", (req, res) => {
               errors: [{ reason: err }],
             });
           }
+          let medium_uuid = stdout.split(": ")[1].trim();
           let res_json = {
             created: datetime,
-            filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
-            id: label,
+            filesystem_path: path.join(default_machine_folder, label),
+            id: medium_uuid,
             label: label,
             size: size,
             status: "active",
             updated: datetime,
             tags: tags,
-            region: "",
-            linode_id: "",
+            region: region,
+            linode_id: "", // TODO: attach to Linode instance
             linode_label: "",
           };
           db.run(
-            `INSERT INTO volumes ('id','data') VALUES ('${label}','${JSON.stringify(
+            `INSERT INTO volumes ('id','data') VALUES ('${medium_uuid}','${JSON.stringify(
               res_json
             )}')`
           );
@@ -119,35 +120,37 @@ router.post("/", (req, res) => {
   });
 });
 
-/*
-
 // Volume Delete
 router.delete("/:volumeId", (req, res) => {
-  db.get(
-    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
-    (err, row) => {
+  let volume_id = req.params.volumeId;
+  db.get(`SELECT data FROM volumes WHERE id='${volume_id}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "volumeId", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "volumeId", reason: "volumeId does not exist." }],
+      });
+    }
+    db.run(`DELETE FROM volumes WHERE id='${volume_id}'`, (err) => {
       if (err) {
         return res
           .status(500)
           .json({ errors: [{ field: "volumeId", reason: err }] });
       }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "volumeId", reason: "volumeId does not exist." }],
-        });
-      }
-      let volume_label = JSON.parse(row["data"])["label"];
-      db.run(`DELETE FROM volumes WHERE id='${req.params.volumeId}'`, (err) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ errors: [{ field: "volumeId", reason: err }] });
+      virtualbox.vboxmanage(
+        ["closemedium", "disk", volume_id, "--delete"],
+        (err: Error) => {
+          if (err) {
+            return res.status(500).json({ errors: [{ reason: err }] });
+          }
+          return res.json({});
         }
-        docker.getVolume(volume_label).remove();
-        return res.json({});
-      });
-    }
-  );
+      );
+    });
+  });
 });
 
 // Volume View
@@ -169,6 +172,8 @@ router.get("/:volumeId", (req, res) => {
     }
   );
 });
+
+/*
 
 // Volume Update
 router.put("/:volumeId", (req, res) => {
