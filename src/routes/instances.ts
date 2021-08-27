@@ -578,6 +578,12 @@ router.post("/:linodeId/mutate", (req, res) => {
   );
 });
 
+// will probably implement, need to look into how clone works in virtualbox
+// Linode Clone
+router.post("/:linodeId/clone", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
+
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
 
@@ -634,11 +640,6 @@ router.get("/:linodeId/backups/:backupId", (req, res) => {
 
 // Backup Restore
 router.post("/:linodeId/backups/:backupId/restore", (req, res) => {
-  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
-});
-
-// Linode Clone
-router.post("/:linodeId/clone", (req, res) => {
   return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
 });
 
