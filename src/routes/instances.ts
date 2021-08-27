@@ -7,7 +7,6 @@ import types from "../data/types.json";
 import regions from "../data/regions.json";
 import disks from "./instances/disks";
 import configs from "./instances/configs";
-import { isIPv4 } from "net";
 
 const virtualbox = require("virtualbox");
 const router = express.Router();
