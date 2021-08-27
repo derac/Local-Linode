@@ -319,11 +319,9 @@ router.put("/:linodeId", (req, res) => {
   );
 });
 
-/*
-
 // Linode Boot
 router.post("/:linodeId/boot", (req, res) => {
-  docker.getContainer(req.params.linodeId).start({}, (err) => {
+  virtualbox.start(req.params.linodeId, (err: Error) => {
     if (err) {
       return res.status(500).json({
         field: "linodeId",
@@ -365,6 +363,53 @@ router.post("/:linodeId/boot", (req, res) => {
     }
   });
 });
+
+// Linode Shut Down
+router.post("/:linodeId/shutdown", (req, res) => {
+  virtualbox.stop(req.params.linodeId, (err: Error) => {
+    if (err) {
+      return res.status(500).json({
+        field: "linodeId",
+        errors: [{ reason: err }],
+      });
+    } else {
+      db.get(
+        `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+        (err, row) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ errors: [{ field: "linodeId", reason: err }] });
+          }
+          if (!row) {
+            return res.status(500).json({
+              errors: [
+                { field: "linodeId", reason: "linodeId does not exist" },
+              ],
+            });
+          }
+          let updated_json = JSON.parse(row["data"]);
+          updated_json["status"] = "stopped";
+          db.run(
+            `UPDATE instances SET data='${JSON.stringify(
+              updated_json
+            )}' WHERE id='${req.params.linodeId}'`,
+            (err) => {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ errors: [{ field: "linodeId", reason: err }] });
+              }
+              return res.json({});
+            }
+          );
+        }
+      );
+    }
+  });
+});
+
+/*
 
 // IP Address View
 router.get("/:linodeId/ips/:address", (req, res) => {
@@ -481,51 +526,6 @@ router.post("/:linodeId/resize", (req, res) => {
       );
     }
   );
-});
-
-// Linode Shut Down
-router.post("/:linodeId/shutdown", (req, res) => {
-  docker.getContainer(req.params.linodeId).stop({}, (err) => {
-    if (err) {
-      return res.status(500).json({
-        field: "linodeId",
-        errors: [{ reason: err }],
-      });
-    } else {
-      db.get(
-        `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
-        (err, row) => {
-          if (err) {
-            return res
-              .status(500)
-              .json({ errors: [{ field: "linodeId", reason: err }] });
-          }
-          if (!row) {
-            return res.status(500).json({
-              errors: [
-                { field: "linodeId", reason: "linodeId does not exist" },
-              ],
-            });
-          }
-          let updated_json = JSON.parse(row["data"]);
-          updated_json["status"] = "stopped";
-          db.run(
-            `UPDATE instances SET data='${JSON.stringify(
-              updated_json
-            )}' WHERE id='${req.params.linodeId}'`,
-            (err) => {
-              if (err) {
-                return res
-                  .status(500)
-                  .json({ errors: [{ field: "linodeId", reason: err }] });
-              }
-              return res.json({});
-            }
-          );
-        }
-      );
-    }
-  });
 });
 
 // Linode Upgrade
