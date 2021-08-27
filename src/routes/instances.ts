@@ -248,8 +248,6 @@ router.get("/:linodeId", (req, res) => {
   );
 });
 
-/*
-
 // Linode Update
 router.put("/:linodeId", (req, res) => {
   let label: string | null = req.headers.label
@@ -320,6 +318,8 @@ router.put("/:linodeId", (req, res) => {
     }
   );
 });
+
+/*
 
 // Linode Boot
 router.post("/:linodeId/boot", (req, res) => {
