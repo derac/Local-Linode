@@ -113,7 +113,7 @@ router.post("/", (req, res) => {
 
   // start creating the container
   virtualbox.vmImport(
-    "F:\\downloads\\ubuntu_server_template.ova",
+    "E:\\VirtualBox VMs\\ubuntu_server_template.ova", // TODO: os.paths this and figure out storage
     { vmname: label, cpus: typeData[0].vcpus, memory: typeData[0].memory }, // there aren't error checks when creating invalid machines or starting them :( might not be necessary
     (err: Error) => {
       if (err) {
@@ -136,7 +136,7 @@ router.post("/", (req, res) => {
           setTimeout(() => {
             virtualbox.guestproperty.get(
               { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-              (ipv4_address: string | undefined) => {
+              (ipv4_address: string) => {
                 if (ipv4_address) {
                   let res_json = {
                     alerts: {
@@ -189,46 +189,50 @@ router.post("/", (req, res) => {
   );
 });
 
-/*
-
+// Gives up any IP addresses the Linode was assigned.
+// Deletes all Disks, Backups, Configs, etc.
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
-  db.get(
-    `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
-    (err, row) => {
+  let label = req.params.linodeId;
+  db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "linodeId", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
+      });
+    }
+    db.run(`DELETE FROM instances WHERE id='${label}'`, (err) => {
       if (err) {
         return res
           .status(500)
           .json({ errors: [{ field: "linodeId", reason: err }] });
       }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
-        });
-      }
-      db.run(
-        `DELETE FROM instances WHERE id='${req.params.linodeId}'`,
-        (err) => {
-          if (err) {
-            return res
-              .status(500)
-              .json({ errors: [{ field: "linodeId", reason: err }] });
-          }
-          docker
-            .getContainer(req.params.linodeId)
-            .remove({ force: true }, (err) => {
-              if (err) {
-                return res.status(500).json({
-                  errors: [{ reason: err }],
-                });
-              } else {
-                return res.json({});
-              }
-            });
+      virtualbox.poweroff(label, (err: Error | null) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linodeId", reason: err }] });
         }
-      );
-    }
-  );
+        virtualbox.vboxmanage(
+          ["unregistervm", label, "--delete"],
+          (err: Error, stdout: string) => {
+            if (err) {
+              return res.status(500).json({
+                errors: [{ reason: err }],
+              });
+            } else {
+              console.log(stdout);
+              return res.json({});
+            }
+          }
+        );
+      });
+    });
+  });
 });
 
 // Linode View
@@ -250,6 +254,8 @@ router.get("/:linodeId", (req, res) => {
     }
   );
 });
+
+/*
 
 // Linode Update
 router.put("/:linodeId", (req, res) => {
