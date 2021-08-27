@@ -112,7 +112,7 @@ router.post("/", (req, res) => {
 
   // start creating the container
   virtualbox.vmImport(
-    "E:\\VirtualBox VMs\\ubuntu_server_template.ova", // TODO: os.paths this and figure out storage
+    path.join(default_machine_folder, "ubuntu_server_template.ova"),
     { vmname: label, cpus: typeData[0].vcpus, memory: typeData[0].memory }, // there aren't error checks when creating invalid machines or starting them :( might not be necessary
     (err: Error) => {
       if (err) {
