@@ -5,6 +5,7 @@ import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
 
+const virtualbox = require("virtualbox");
 const router = express.Router();
 const db = new sqlite3.Database(
   path.join(__dirname, "../data/database.sqlite3")
@@ -12,8 +13,6 @@ const db = new sqlite3.Database(
 
 // ===== Linode Volumes API =====
 // /v4/volumes
-
-/*
 
 // Volumes List
 router.get("/", (req, res) => {
@@ -28,6 +27,8 @@ router.get("/", (req, res) => {
     });
   });
 });
+
+/*
 
 // Volume Create
 router.post("/", (req, res) => {
