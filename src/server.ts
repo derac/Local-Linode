@@ -5,7 +5,7 @@ import instances from "./routes/instances";
 import volumes from "./routes/volumes";
 
 // run setup code
-import "./setup/initial";
+import "./setup/sqlite3_db";
 
 const app = express();
 const PersonalAccessToken = "testtokenabcdefg";

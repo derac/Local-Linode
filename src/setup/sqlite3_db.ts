@@ -1,6 +1,4 @@
-import fs from "fs";
 import path from "path";
-
 import sqlite3 from "sqlite3";
 
 // make database if it doesn't exist
