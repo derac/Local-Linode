@@ -173,11 +173,11 @@ router.get("/:volumeId", (req, res) => {
   );
 });
 
-/*
-
 // Volume Update
 router.put("/:volumeId", (req, res) => {
-  if (!req.headers.label) {
+  let label = req.headers.label as string;
+  let volumedId = req.params.volumeId as string;
+  if (!label) {
     return res.status(500).json({
       errors: [{ field: "label", reason: "label must be a valid value" }],
     });
@@ -196,47 +196,55 @@ router.put("/:volumeId", (req, res) => {
     });
   }
   let datetime: string = new Date().toISOString();
-  db.get(
-    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
-    (err, row) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "volumeId", reason: err }] });
-      }
-      if (!row) {
-        return res.status(500).json({
-          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
-        });
-      }
-      let updated_json = JSON.parse(row["data"]);
-      updated_json["label"] = req.headers.label;
-      updated_json["updated"] = datetime;
-      if (tags) {
-        updated_json["tags"] = tags;
-      }
-      db.run(
-        `UPDATE volumes SET data='${JSON.stringify(updated_json)}' WHERE id='${
-          req.params.volumeId
-        }'`,
-        (err) => {
-          if (err) {
-            return res
-              .status(500)
-              .json({ errors: [{ field: "volumeId", reason: err }] });
-          }
-          return res.json(updated_json);
-        }
-      );
+  db.get(`SELECT data FROM volumes WHERE id='${volumedId}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "volumeId", reason: err }] });
     }
-  );
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+      });
+    }
+    let updated_json = JSON.parse(row["data"]);
+    virtualbox.vboxmanage(
+      [
+        "modifymedium",
+        volumedId,
+        "--move",
+        path.join(default_machine_folder, `${label}.vdi`),
+      ],
+      (err: Error) => {
+        if (err) {
+          return res.status(500).json({ errors: [{ reason: err }] });
+        }
+        console.log(path.join(default_machine_folder, `${label}.vdi`));
+        updated_json["label"] = label;
+        updated_json["updated"] = datetime;
+        if (tags) {
+          updated_json["tags"] = tags;
+        }
+        db.run(
+          `UPDATE volumes SET data='${JSON.stringify(
+            updated_json
+          )}' WHERE id='${volumedId}'`,
+          (err) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ errors: [{ field: "volumeId", reason: err }] });
+            }
+            return res.json(updated_json);
+          }
+        );
+      }
+    );
+  });
 });
 
-// Volume Attach
-router.post("/:volumeId/attach", (req, res) => {});
+/*
 
-// Volume Detach
-router.post("/:volumeId/detach", (req, res) => {});
 
 // Volume Resize
 router.post("/:volumeId/resize", (req, res) => {
@@ -280,5 +288,11 @@ router.post("/:volumeId/resize", (req, res) => {
 });
 
 */
+
+// Volume Attach
+router.post("/:volumeId/attach", (req, res) => {});
+
+// Volume Detach
+router.post("/:volumeId/detach", (req, res) => {});
 
 export default router;
