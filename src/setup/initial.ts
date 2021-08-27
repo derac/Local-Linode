@@ -4,7 +4,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 
 // make database if it doesn't exist
-const db_file = path.join(__dirname, "./data/database.sqlite3");
+const db_file = path.join(__dirname, "../data/database.sqlite3");
 if (!fs.existsSync(db_file)) {
   fs.openSync(db_file, "w");
   const db = new sqlite3.Database(db_file);

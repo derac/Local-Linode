@@ -4,8 +4,8 @@ import express from "express";
 import sqlite3 from "sqlite3";
 
 import regions from "../data/regions.json";
+import { virtualbox, default_machine_folder } from "../setup/virtualbox";
 
-const virtualbox = require("virtualbox");
 const router = express.Router();
 const db = new sqlite3.Database(
   path.join(__dirname, "../data/database.sqlite3")
@@ -27,8 +27,6 @@ router.get("/", (req, res) => {
     });
   });
 });
-
-/*
 
 // Volume Create
 router.post("/", (req, res) => {
@@ -68,6 +66,11 @@ router.post("/", (req, res) => {
     });
   }
   db.get(`SELECT * FROM volumes WHERE id='${label}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({
+        errors: [{ reason: err }],
+      });
+    }
     if (row) {
       return res.status(500).json({
         errors: [
@@ -75,9 +78,22 @@ router.post("/", (req, res) => {
         ],
       });
     } else {
-      docker
-        .createVolume({ name: label })
-        .then((volume) => {
+      virtualbox.vboxmanage(
+        [
+          "createmedium",
+          "--format",
+          "VDI",
+          "--size",
+          size * 1024,
+          "--filename",
+          path.join(default_machine_folder, label),
+        ],
+        (err: Error, stdout: string) => {
+          if (err) {
+            return res.status(500).json({
+              errors: [{ reason: err }],
+            });
+          }
           let res_json = {
             created: datetime,
             filesystem_path: `/dev/disk/by-id/scsi-0Linode_Volume_${label}`,
@@ -97,13 +113,13 @@ router.post("/", (req, res) => {
             )}')`
           );
           return res.json(res_json);
-        })
-        .catch((err) => {
-          return res.status(500).json({ errors: [{ reason: err }] });
-        });
+        }
+      );
     }
   });
 });
+
+/*
 
 // Volume Delete
 router.delete("/:volumeId", (req, res) => {

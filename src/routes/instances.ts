@@ -7,8 +7,8 @@ import types from "../data/types.json";
 import regions from "../data/regions.json";
 import disks from "./instances/disks";
 import configs from "./instances/configs";
+import { virtualbox, default_machine_folder } from "../setup/virtualbox";
 
-const virtualbox = require("virtualbox");
 const router = express.Router();
 const db = new sqlite3.Database(
   path.join(__dirname, "../data/database.sqlite3")
