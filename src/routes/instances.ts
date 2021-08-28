@@ -34,6 +34,7 @@ router.get("/", (req, res) => {
   });
 });
 
+// TODO: need to implement requiring a root pass
 // Linode Create
 router.post("/", (req, res) => {
   let label: string = req.headers.label
