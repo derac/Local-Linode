@@ -32,7 +32,6 @@
    1. Power off machine > Settings > Unmount install CD > Power on
    1. Machine GUI Menu > Devices > Insert Guest Additions image (may need to remove ubuntu iso)
 1. Log into the machine and run bash commands below.
-
 1. In Virtualbox Manager
    1. Machine GUI Menu > Devices > Optical Drives > Remove disk
    1. Power off machine > Machine settings
