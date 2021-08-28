@@ -55,7 +55,7 @@ sudo ufw allow ssh
 sudo ufw enable
 ```
 
-# API Reference Pages
+## API Reference Pages
 
 - [Linode API](https://www.linode.com/docs/api/)
 - [node-sqlite3](https://github.com/mapbox/node-sqlite3/wiki/API)
