@@ -171,9 +171,9 @@ router.post("/", (req, res) => {
                     watchdog_enabled: true,
                   };
                   db.run(
-                    `INSERT INTO instances ('id','data') VALUES ('${label}','${JSON.stringify(
+                    `INSERT INTO instances ( id,data,disks,configs ) VALUES ('${label}','${JSON.stringify(
                       res_json
-                    )}')`
+                    )}','[]','[]')` // TODO: implement creating default config and main disk
                   );
                   return res.json(res_json);
                 } else {
