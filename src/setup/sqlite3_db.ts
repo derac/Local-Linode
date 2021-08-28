@@ -9,7 +9,7 @@ db.run(
   "CREATE TABLE IF NOT EXISTS volumes (id text PRIMARY KEY, data json NOT NULL );"
 );
 db.run(
-  "CREATE TABLE IF NOT EXISTS instances (id text PRIMARY KEY, data json NOT NULL );"
+  "CREATE TABLE IF NOT EXISTS instances (id text PRIMARY KEY, data json NOT NULL, disks json NOT NULL, configs json NOT NULL);"
 );
 
 export default {};
