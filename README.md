@@ -12,7 +12,7 @@
 
 **Put this machine in your default VirtualBox VMs folder and call it "ubuntu_server_template.ova"**
 
-1. Download an osbox VDI image from https://www.osboxes.org/ubuntu-server/ or install from iso
+1. Download an osbox VDI image from https://www.osboxes.org/ubuntu-server/ or install from iso. Optionally use the desktop version, it will end up being a bit larger.
 1. Load it up in VirtualBox
 1. In VM Settings:
    1. Navigate to Network > Adapter 1 > Attached to:
@@ -35,6 +35,8 @@ sudo apt install openssh-server -y
 sudo ufw allow ssh
 sudo ufw enable
 sudo systemctl enable sshd
+# set target to console mode.
+systemctl set-default multi-user.target
 # shutdown system to prepare for export to OVA
 sudo shutdown -P 0
 ```
