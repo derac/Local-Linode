@@ -3,12 +3,12 @@
 ## Setup
 
 1. Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads) onto the system.
-1. Setup VirtualBox. (instructions below)
+1. Setup VirtualBox machine template. (instructions below)
 1. `npm install`
 1. `npm run build`
 1. `npm start`
 
-## VirtualBox setup
+## Setup VirtualBox machine template
 
 **Put this machine in your default VirtualBox VMs folder and call it "ubuntu_server_template.ova"**
 
@@ -23,6 +23,7 @@
    1. MAC Address Policy: Strip all network adapter MAC addresses
    1. Un-check Write Manifest file, might be faster
    1. File: "{**default VirtualBox VMs folder**}/ubuntu_server_template.ova"
+1. You can delete the Template you created in VirtualBox. If you need to update the OVA, you can edit a machine spawned by the script, re-export, and overwrite the template OVA.
 
 ```bash
 # install virtualbox guest additions from ubuntu multiverse repo
