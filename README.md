@@ -3,12 +3,12 @@
 ## Setup
 
 1. Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads) onto the system.
-1. Setup VirtualBox machine template. (instructions below)
+1. Follow the VirtualBox machine template setup instructions below.
 1. `npm install`
 1. `npm run build`
 1. `npm start`
 
-## Setup VirtualBox machine template
+## VirtualBox machine template setup
 
 1. Download [Ubuntu Server 20.04](https://ubuntu.com/download/server)
 1. In VirtualBox Manager:
@@ -30,12 +30,15 @@
    1. Check Install OpenSSH Server > Done
    1. Done > Wait for intallation to complete > Reboot Now
    1. Power off machine > Settings > Unmount install CD > Power on
-1. Run the set of commands in the textbox below on the machine.
+   1. Machine GUI Menu > Devices > Insert Guest Additions image (may need to remove ubuntu iso)
+1. Log into the machine and run bash commands below.
+
 1. In Virtualbox Manager
+   1. Machine GUI Menu > Devices > Optical Drives > Remove disk
+   1. Power off machine > Machine settings
    1. Navigate to Network > Adapter 1 > Attached to:
-   1. Select Host-only Adapter
-   1. Only do this after running the above commands, so you have access to the internet.
-1. Export to OCI
+   1. Select Host-only Adapter > OK
+   1. Right click machine > Export to OCI
    1. Format: Open Virtualization Format 2.0
    1. MAC Address Policy: Strip all network adapter MAC addresses
    1. Un-check Write Manifest file, might be faster
@@ -43,20 +46,14 @@
 1. You can delete the Template you created in VirtualBox. If you need to update the OVA, you can edit a machine spawned by the script, re-export, and overwrite the template OVA.
 
 ```bash
-# install virtualbox guest additions from ubuntu multiverse repo
 sudo apt update
 sudo apt upgrade -y
-sudo add-apt-repository multiverse
-sudo apt install virtualbox-guest-dkms virtualbox-guest-x11 -y
-# install and enable ssh server, allow through firewall, enable firewall
-sudo apt install openssh-server -y
+sudo apt install build-essentiallinux-headers-$(uname -r) -y
+sudo mkdir /media
+sudo mount /dev/cdrom /media
+sudo /media/VBoxLinuxAdditions.run
 sudo ufw allow ssh
 sudo ufw enable
-sudo systemctl enable sshd
-# set target to console mode.
-systemctl set-default multi-user.target
-# shutdown system to prepare for export to OVA
-sudo shutdown -P 0
 ```
 
 # API Reference Pages
