@@ -47,8 +47,7 @@
 ```bash
 sudo apt update
 sudo apt upgrade -y
-sudo apt install build-essentiallinux-headers-$(uname -r) -y
-sudo mkdir /media
+sudo apt install build-essential linux-headers-$(uname -r) -y
 sudo mount /dev/cdrom /media
 sudo /media/VBoxLinuxAdditions.run
 sudo ufw allow ssh
