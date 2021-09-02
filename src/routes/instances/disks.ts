@@ -69,15 +69,23 @@ router.get("/:diskId", (req, res) => {
 });
 
 // Disk Update
-router.put("/:diskId", (req, res) => {});
+router.put("/:diskId", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // Disk Clone
-router.post("/:diskId/clone", (req, res) => {});
+router.post("/:diskId/clone", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // Disk Root Password Reset
-router.post("/:diskId/password", (req, res) => {});
+router.post("/:diskId/password", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // Disk Resize
-router.post("/:diskId/resize", (req, res) => {});
+router.post("/:diskId/resize", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 export default router;

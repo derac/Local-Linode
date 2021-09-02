@@ -65,8 +65,8 @@ sudo ufw enable
 
 ## TODO
 
-- Linode reboot - Boot from config
-- Linode Delete - delete disks and such
+- Linode Eeboot - Boot from config
+- Linode Delete - cycle through all associated disks and delete them
 - Write code to attach/detach volumes to instances/configs
 - Require a pass when using linode create
 - Use disk size variable from type when creating insance, probably won't implement this any time soon
@@ -75,3 +75,4 @@ sudo ufw enable
 - Volume Create - attach to Linode instance
 - Volume Attach/Detach
 - Rest of Disks and Configs code
+- Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
