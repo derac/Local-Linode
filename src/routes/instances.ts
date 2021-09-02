@@ -1,18 +1,15 @@
 import path from "path";
 
 import express from "express";
-import sqlite3 from "sqlite3";
 
 import types from "../data/types.json";
 import regions from "../data/regions.json";
 import disks from "./instances/disks";
 import configs from "./instances/configs";
 import { virtualbox, default_machine_folder } from "../setup/virtualbox";
+import { db } from "../setup/sqlite3_db";
 
 const router = express.Router();
-const db = new sqlite3.Database(
-  path.join(__dirname, "../data/database.sqlite3")
-);
 
 // ===== Linode Instances API =====
 // /v4/linode/instances
@@ -660,20 +657,20 @@ router.post("/:linodeId/mutate", (req, res) => {
   );
 });
 
-// will probably implement, need to look into how clone works in virtualbox
-// Linode Clone
-router.post("/:linodeId/clone", (req, res) => {
-  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
-});
-
 // Linode's Volumes List
 router.get("/:linodeId/volumes", (req, res) => {});
 
 // Linode Root Password Reset
-// NOTE - Linode requires the machine to be shut down to change the pass.
+// TODO: Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox.
+// need to turn it on, change pass and turn it back off I suppose.
 router.post("/:linodeId/password", (req, res) => {});
 
 // ===== not implemented =====
+
+// Linode Clone
+router.post("/:linodeId/clone", (req, res) => {
+  return res.status(501).json({ errors: [{ reason: "Not implemented." }] });
+});
 
 // Linode Rebuild
 router.post("/:linodeId/rebuild", (req, res) => {
