@@ -36,7 +36,36 @@ router.delete("/:diskId", (req, res) => {});
 
 // Disk View
 router.get("/:diskId", (req, res) => {
-  res.send(`${(req.params as any).linodeId} ${req.params.diskId}`);
+  db.get(
+    `SELECT disks FROM instances WHERE id='${(req.params as any).linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      let disk_json = JSON.parse(row["disks"]).filter((disk: any) => {
+        return req.params.diskId == disk["id"];
+      });
+      if (disk_json) {
+        return res.json(disk_json);
+      } else {
+        return res.status(500).json({
+          errors: [
+            {
+              field: "linodeId",
+              reason: "diskId does not exist on this instance",
+            },
+          ],
+        });
+      }
+    }
+  );
 });
 
 // Disk Update

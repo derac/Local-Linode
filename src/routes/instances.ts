@@ -143,10 +143,12 @@ router.post("/", (req, res) => {
                       stdout.split("\n").forEach((line) => {
                         let kv_arr = line.split("=");
                         if (kv_arr[0].includes("UUID")) {
-                          disk_uuid = kv_arr[1];
+                          disk_uuid = kv_arr[1].trim().replace(/['"]+/g, "");
                         }
                         if (kv_arr[0].includes("SATA-0-0")) {
-                          disk_filename = kv_arr[1];
+                          disk_filename = kv_arr[1]
+                            .trim()
+                            .replace(/['"]+/g, "");
                         }
                       });
                       let res_json = {
