@@ -104,7 +104,7 @@ router.post("/", (req, res) => {
             updated: datetime,
             tags: tags,
             region: region,
-            linode_id: "", // TODO: attach to Linode instance
+            linode_id: "",
             linode_label: "",
           };
           db.run(

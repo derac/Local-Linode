@@ -65,6 +65,13 @@ sudo ufw enable
 
 ## TODO
 
-- Boot from config
-- Delete disks on deleting instance
+- Linode reboot - Boot from config
+- Linode Delete - delete disks and such
 - Write code to attach/detach volumes to instances/configs
+- Require a pass when using linode create
+- Use disk size variable from type when creating insance, probably won't implement this any time soon
+- Linode Resize - actually resize the disk
+- Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
+- Volume Create - attach to Linode instance
+- Volume Attach/Detach
+- Rest of Disks and Configs code

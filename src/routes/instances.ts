@@ -31,7 +31,6 @@ router.get("/", (req, res) => {
   });
 });
 
-// TODO: need to implement requiring a root pass
 // Linode Create
 router.post("/", (req, res) => {
   let label: string = req.headers.label
@@ -122,7 +121,6 @@ router.post("/", (req, res) => {
           ],
         });
       }
-      // TODO: start async with return value? - set status field can't get certain values
       // like ip until it's up, can set those later
       virtualbox.start(label, (err: Error) => {
         if (err) {
@@ -172,7 +170,7 @@ router.post("/", (req, res) => {
                         label: label,
                         region: req.headers.region,
                         specs: {
-                          disk: typeData[0].disk, // TODO: utilize disk size on creation?
+                          disk: typeData[0].disk,
                           memory: typeData[0].memory,
                           transfer: typeData[0].transfer,
                           vcpus: typeData[0].vcpus,
@@ -269,7 +267,7 @@ router.post("/", (req, res) => {
 });
 
 // Gives up any IP addresses the Linode was assigned.
-// TODO: Deletes all Disks, Backups, Configs, etc.
+// Deletes all Disks, Backups, Configs, etc.
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
   let label = req.params.linodeId;
@@ -490,7 +488,6 @@ router.post("/:linodeId/shutdown", (req, res) => {
 });
 
 // Linode Reboot
-// TODO: add config logic if needed
 router.post("/:linodeId/reboot", (req, res) => {
   let label = req.params.linodeId;
   db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
@@ -578,7 +575,6 @@ router.get("/:linodeId/ips/:address", (req, res) => {
   });
 });
 
-// TODO: actually resizing the disk by executing commands
 // Linode Resize
 router.post("/:linodeId/resize", (req, res) => {
   // check type header for validity
@@ -663,8 +659,6 @@ router.post("/:linodeId/mutate", (req, res) => {
 router.get("/:linodeId/volumes", (req, res) => {});
 
 // Linode Root Password Reset
-// TODO: Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox.
-// need to turn it on, change pass and turn it back off I suppose.
 router.post("/:linodeId/password", (req, res) => {});
 
 // ===== not implemented =====
