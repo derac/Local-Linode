@@ -136,17 +136,11 @@ router.post("/", (req, res) => {
                   virtualbox.vboxmanage(
                     ["showvminfo", "--machinereadable", label],
                     (err: Error, stdout: string) => {
-                      // get disk filename from kv output of showvminfo
-                      let disk_uuid, disk_filename;
-                      stdout.split("\n").forEach((line) => {
+                      // get disk uuid from kv output of showvminfo
+                      let disk_uuid = stdout.split("\n").filter((line) => {
                         let kv_arr = line.split("=");
                         if (kv_arr[0].includes("UUID")) {
-                          disk_uuid = kv_arr[1].trim().replace(/['"]+/g, "");
-                        }
-                        if (kv_arr[0].includes("SATA-0-0")) {
-                          disk_filename = kv_arr[1]
-                            .trim()
-                            .replace(/['"]+/g, "");
+                          return kv_arr[1].trim().replace(/['"]+/g, "");
                         }
                       });
                       let res_json = {
@@ -183,7 +177,6 @@ router.post("/", (req, res) => {
                       };
                       let default_disk_json = {
                         created: datetime,
-                        filesystem_path: disk_filename,
                         filesystem: "ext4",
                         id: disk_uuid,
                         label: "default",
@@ -245,11 +238,13 @@ router.post("/", (req, res) => {
                         virt_mode: "paravirt",
                       };
                       db.run(
-                        `INSERT INTO instances ( id,data,disks,configs ) VALUES ('${label}','${JSON.stringify(
+                        `INSERT INTO instances ( id, data, disks, configs, current_config ) VALUES ('${label}','${JSON.stringify(
                           res_json
                         )}','[${JSON.stringify(
                           default_disk_json
-                        )}]','[${JSON.stringify(default_config_json)}]')`
+                        )}]','[${JSON.stringify(
+                          default_config_json
+                        )}]','${label}')`
                       );
                       return res.json(res_json);
                     }
@@ -656,7 +651,38 @@ router.post("/:linodeId/mutate", (req, res) => {
 });
 
 // Linode's Volumes List
-router.get("/:linodeId/volumes", (req, res) => {});
+router.get("/:linodeId/volumes", (req, res) => {
+  db.get(
+    `SELECT configs, current_config FROM instances WHERE id='${req.params.linodeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linodeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        });
+      }
+      let config_json = JSON.parse(row["configs"]).filter((config: any) => {
+        return row["current_config"] == config["id"];
+      });
+      if (config_json) {
+        return res.json(config_json);
+      } else {
+        return res.status(500).json({
+          errors: [
+            {
+              field: "linodeId",
+              reason: "configId does not exist on this instance",
+            },
+          ],
+        });
+      }
+    }
+  );
+});
 
 // Linode Root Password Reset
 router.post("/:linodeId/password", (req, res) => {});
