@@ -63,3 +63,9 @@ sudo ufw enable
   - Look at the source for most up-to-date API usage info
 - [vboxmanage](https://www.virtualbox.org/manual/ch08.html)
   - this is what node-virtualbox uses under the hood to control virtualbox
+
+## TODO
+
+- Boot from config
+- Delete disks on deleting instance
+- Write code to attach/detach volumes to instances/configs

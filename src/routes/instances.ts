@@ -138,44 +138,125 @@ router.post("/", (req, res) => {
               { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
               (ipv4_address: string) => {
                 if (ipv4_address) {
-                  let res_json = {
-                    alerts: {
-                      cpu: 180,
-                      io: 10000,
-                      network_in: 10,
-                      network_out: 10,
-                      transfer_quota: 80,
-                    },
-                    backups: {
-                      enabled: false,
-                    },
-                    created: datetime,
-                    group: "Linode-Group",
-                    hypervisor: "kvm",
-                    id: label,
-                    image: "linode/ubuntu20.04",
-                    ipv4: ipv4_address,
-                    ipv6: "",
-                    label: label,
-                    region: req.headers.region,
-                    specs: {
-                      disk: typeData[0].disk, // TODO: utilize disk size on creation?
-                      memory: typeData[0].memory,
-                      transfer: typeData[0].transfer,
-                      vcpus: typeData[0].vcpus,
-                    },
-                    status: "running",
-                    tags: tags,
-                    type: req.headers.type,
-                    updated: datetime,
-                    watchdog_enabled: true,
-                  };
-                  db.run(
-                    `INSERT INTO instances ( id,data,disks,configs ) VALUES ('${label}','${JSON.stringify(
-                      res_json
-                    )}','[]','[]')` // TODO: implement creating default config and main disk
+                  virtualbox.vboxmanage(
+                    ["showvminfo", "--machinereadable", label],
+                    (err: Error, stdout: string) => {
+                      // get disk filename from kv output of showvminfo
+                      let disk_uuid, disk_filename;
+                      stdout.split("\n").forEach((line) => {
+                        let kv_arr = line.split("=");
+                        if (kv_arr[0].includes("UUID")) {
+                          disk_uuid = kv_arr[1];
+                        }
+                        if (kv_arr[0].includes("SATA-0-0")) {
+                          disk_filename = kv_arr[1];
+                        }
+                      });
+                      let res_json = {
+                        alerts: {
+                          cpu: 180,
+                          io: 10000,
+                          network_in: 10,
+                          network_out: 10,
+                          transfer_quota: 80,
+                        },
+                        backups: {
+                          enabled: false,
+                        },
+                        created: datetime,
+                        group: "Linode-Group",
+                        hypervisor: "kvm",
+                        id: label,
+                        image: "linode/ubuntu20.04",
+                        ipv4: ipv4_address,
+                        ipv6: "",
+                        label: label,
+                        region: req.headers.region,
+                        specs: {
+                          disk: typeData[0].disk, // TODO: utilize disk size on creation?
+                          memory: typeData[0].memory,
+                          transfer: typeData[0].transfer,
+                          vcpus: typeData[0].vcpus,
+                        },
+                        status: "running",
+                        tags: tags,
+                        type: req.headers.type,
+                        updated: datetime,
+                        watchdog_enabled: true,
+                      };
+                      let default_disk_json = {
+                        created: datetime,
+                        filesystem_path: disk_filename,
+                        filesystem: "ext4",
+                        id: disk_uuid,
+                        label: "default",
+                        size: typeData[0].disk,
+                        status: "ready",
+                        updated: datetime,
+                      };
+                      let default_config_json = {
+                        comments:
+                          "This is the default config for this instance.",
+                        devices: {
+                          sda: {
+                            disk_id: label,
+                            volume_id: null,
+                          },
+                          sdb: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sdc: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sdd: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sde: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sdf: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sdg: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                          sdh: {
+                            disk_id: null,
+                            volume_id: null,
+                          },
+                        },
+                        helpers: {
+                          devtmpfs_automount: false,
+                          distro: false,
+                          modules_dep: false,
+                          network: true,
+                          updatedb_disabled: true,
+                        },
+                        id: label,
+                        interfaces: [], // An empty interfaces array results in a default public interface configuration only.
+                        kernel: "linode/latest-64bit",
+                        label: "default",
+                        memory_limit: typeData[0].memory,
+                        root_device: "/dev/sda",
+                        run_level: "default",
+                        virt_mode: "paravirt",
+                      };
+                      db.run(
+                        `INSERT INTO instances ( id,data,disks,configs ) VALUES ('${label}','${JSON.stringify(
+                          res_json
+                        )}','[${JSON.stringify(
+                          default_disk_json
+                        )}]','[${JSON.stringify(default_config_json)}]')`
+                      );
+                      return res.json(res_json);
+                    }
                   );
-                  return res.json(res_json);
                 } else {
                   retry_loop();
                 }
@@ -189,7 +270,7 @@ router.post("/", (req, res) => {
 });
 
 // Gives up any IP addresses the Linode was assigned.
-// Deletes all Disks, Backups, Configs, etc.
+// TODO: Deletes all Disks, Backups, Configs, etc.
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
   let label = req.params.linodeId;
