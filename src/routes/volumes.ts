@@ -328,14 +328,21 @@ router.post("/:volumeId/attach", (req, res) => {
     virtualbox.vboxmanage(
       ["showvminfo", "--machinereadable", linode_id],
       (err: Error, stdout: string) => {
-        console.log(
-          stdout.split("\n").filter((line) => {
-            let kv_list = line.split("=");
-            if (kv_list[0].includes("SATA") && kv_list[1].includes("none")) {
-              return true;
-            }
-          })
-        );
+        let first_open_SATA_device = stdout.split("\n").find((line) => {
+          return line.includes("SATA") && line.includes("none");
+        });
+        if (!first_open_SATA_device) {
+          return res.status(500).json({
+            errors: [
+              {
+                reason: "No available slots for more SATA devices on this VM.",
+              },
+            ],
+          });
+        }
+        let port_num = first_open_SATA_device.split("=")[0].split("-")[1];
+        console.log(port_num);
+        return res.json({});
       }
     );
     // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
