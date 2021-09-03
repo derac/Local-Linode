@@ -35,8 +35,9 @@
 1. In Virtualbox Manager
    1. Machine GUI Menu > Devices > Optical Drives > Remove disk
    1. Power off machine > Machine settings
-   1. Navigate to Network > Adapter 1 > Attached to:
-   1. Select Host-only Adapter > OK
+   1. Navigate to Network > Adapter 1 > Attached to: Select Host-only Adapter
+   1. Navigate to Storage > Controller: SATA > Port Count > Enter `8`
+   1. Hit OK
    1. Right click machine > Export to OCI
    1. Format: Open Virtualization Format 2.0
    1. MAC Address Policy: Strip all network adapter MAC addresses
@@ -65,14 +66,13 @@ sudo ufw enable
 
 ## TODO
 
-- Linode Eeboot - Boot from config
+- Linode Reboot - Boot from config
 - Linode Delete - cycle through all associated disks and delete them
 - Write code to attach/detach volumes to instances/configs
 - Require a pass when using linode create
-- Use disk size variable from type when creating insance, probably won't implement this any time soon
-- Linode Resize - actually resize the disk
 - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - Volume Create - attach to Linode instance
 - Volume Attach/Detach
-- Rest of Disks and Configs code
 - Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
+- Use disk size variable from type when creating insance, probably won't implement this any time soon
+- Linode Resize - actually resize the disk
