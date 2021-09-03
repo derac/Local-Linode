@@ -76,3 +76,4 @@ sudo ufw enable
 - Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
 - Use disk size variable from type when creating insance, probably won't implement this any time soon
 - Linode Resize - actually resize the disk
+- When attaching storage, it always goes to the next sdX device name. I haven't been able to find a way around this behavior. Instead, the only way you can add volumes to a config is through disk/volume create, so just create it at the last port available. When removing a disk/volume from a config, need to shift down drives further down the list.

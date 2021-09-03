@@ -306,21 +306,28 @@ router.post("/:volumeId/attach", (req, res) => {
       ],
     });
   }
-  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ errors: [{ field: "linode_id", reason: err }] });
-    }
-    if (!row) {
-      return res.status(500).json({
-        errors: [{ field: "linode_id", reason: "linode_id does not exist" }],
-      });
-    }
-    let datetime = new Date().toISOString();
-
-    // update "updated" field with current datetime for volume and linode instance (and config)
-  });
+  if (persist_across_boots) {
+    db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "linode_id", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linode_id", reason: "linode_id does not exist" }],
+        });
+      }
+      let datetime = new Date().toISOString();
+      let linode_json = JSON.parse(row["data"]);
+      // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
+      // update "updated" field with current datetime for volume and linode instance (and config)
+    });
+  } else {
+    // need to find porn number to attach to
+    // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
+    // update "updated" field with current datetime for volume and linode instance
+  }
 });
 
 // Volume Detach
