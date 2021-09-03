@@ -58,7 +58,7 @@ router.post("/", (req, res) => {
   // check type header for validity
   if (!req.headers.type) {
     return res.status(500).json({
-      errors: [{ field: "type", reason: "type is a required request header." }],
+      errors: [{ field: "type", reason: "type is a required header." }],
     });
   }
   let typeData = types.data.filter((type) => type.id == req.headers.type);
@@ -76,9 +76,7 @@ router.post("/", (req, res) => {
   // check region header for validity
   if (!req.headers.region) {
     return res.status(500).json({
-      errors: [
-        { field: "region", reason: "region is a required request header." },
-      ],
+      errors: [{ field: "region", reason: "region is a required header." }],
     });
   }
   let regionData = regions.data.filter(
@@ -575,7 +573,7 @@ router.post("/:linodeId/resize", (req, res) => {
   // check type header for validity
   if (!req.headers.type) {
     return res.status(500).json({
-      errors: [{ field: "type", reason: "type is a required request header." }],
+      errors: [{ field: "type", reason: "type is a required header." }],
     });
   }
   let typeData = types.data.filter((type) => type.id == req.headers.type);

@@ -290,9 +290,85 @@ router.post("/:volumeId/resize", (req, res) => {
 });
 
 // Volume Attach
-router.post("/:volumeId/attach", (req, res) => {});
+router.post("/:volumeId/attach", (req, res) => {
+  let config_id = req.headers.config_id;
+  let linode_id = req.headers.linode_id;
+  let persist_across_boots = false
+    ? req.headers.persist_across_boots == "false"
+    : true;
+  if (!linode_id) {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "linode_id",
+          reason: "linode_id is a required header.",
+        },
+      ],
+    });
+  }
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "linode_id", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "linode_id", reason: "linode_id does not exist" }],
+      });
+    }
+    let datetime = new Date().toISOString();
+
+    // update "updated" field with current datetime for volume and linode instance (and config)
+  });
+});
 
 // Volume Detach
-router.post("/:volumeId/detach", (req, res) => {});
+router.post("/:volumeId/detach", (req, res) => {
+  db.get(
+    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
+    (err, row) => {
+      if (err) {
+        return res
+          .status(500)
+          .json({ errors: [{ field: "volumeId", reason: err }] });
+      }
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+        });
+      }
+      let datetime = new Date().toISOString();
+      let volume_json = JSON.parse(row["data"]);
+      let volume_uuid = volume_json["id"];
+      let linode_id = volume_json["linode_id"];
+      if (!linode_id) {
+        return res.status(500).json({
+          errors: [
+            { reason: "This volume isn't attached to any linode instance" },
+          ],
+        });
+      }
+      virtualbox.vboxmanage(
+        ["showvminfo", "--machinereadable", linode_id],
+        (err: Error, stdout: string) => {
+          if (err) {
+            return res.status(500).json({ errors: [{ reason: err }] });
+          }
+          let SATA_drives = stdout.split("\n").filter((line) => {
+            return line.includes("SATA");
+          });
+          volume_json["updated"] = datetime;
+          console.log(SATA_drives);
+        }
+      );
+      // get port number associated with this uuid
+      // vboxmanage storageattach volumeId --storagectl "SATA" --medium none --type hdd --port PORTNUM
+      // if successful
+      // remove linode_id and linode_label from the config sql
+      return res.json({});
+    }
+  );
+});
 
 export default router;
