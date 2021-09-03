@@ -328,6 +328,11 @@ router.post("/:volumeId/attach", (req, res) => {
     virtualbox.vboxmanage(
       ["showvminfo", "--machinereadable", linode_id],
       (err: Error, stdout: string) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linode_id", reason: err }] });
+        }
         let first_open_SATA_device = stdout.split("\n").find((line) => {
           return line.includes("SATA") && line.includes("none");
         });

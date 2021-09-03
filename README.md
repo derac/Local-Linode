@@ -66,14 +66,14 @@ sudo ufw enable
 
 ## TODO
 
+- Volume Attach/Detach - finish logic, more detail in files
+- When attaching storage, it always goes to the next sdX device name. I haven't been able to find a way around this behavior. Instead, the only way you can add volumes to a config is through disk/volume create, so just create it at the last port available. When removing a disk/volume from a config, need to shift down drives further down the list.
 - Linode Reboot - Boot from config
 - Linode Delete - cycle through all associated disks and delete them
-- Write code to attach/detach volumes to instances/configs
+- Volume Create - attach to Linode instance
+- Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
 - Require a pass when using linode create
 - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
-- Volume Create - attach to Linode instance
-- Volume Attach/Detach
-- Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
 - Use disk size variable from type when creating insance, probably won't implement this any time soon
 - Linode Resize - actually resize the disk
-- When attaching storage, it always goes to the next sdX device name. I haven't been able to find a way around this behavior. Instead, the only way you can add volumes to a config is through disk/volume create, so just create it at the last port available. When removing a disk/volume from a config, need to shift down drives further down the list.
+- Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
