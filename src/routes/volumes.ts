@@ -293,9 +293,8 @@ router.post("/:volumeId/resize", (req, res) => {
 router.post("/:volumeId/attach", (req, res) => {
   let config_id = req.headers.config_id;
   let linode_id = req.headers.linode_id;
-  let persist_across_boots = false
-    ? req.headers.persist_across_boots == "false"
-    : true;
+  let persist_across_boots =
+    req.headers.persist_across_boots == "false" ? false : true;
   if (!linode_id) {
     return res.status(500).json({
       errors: [
@@ -306,6 +305,7 @@ router.post("/:volumeId/attach", (req, res) => {
       ],
     });
   }
+  console.log(persist_across_boots, config_id, linode_id);
   if (persist_across_boots) {
     db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
       if (err) {
@@ -324,7 +324,20 @@ router.post("/:volumeId/attach", (req, res) => {
       // update "updated" field with current datetime for volume and linode instance (and config)
     });
   } else {
-    // need to find porn number to attach to
+    // find port number to attach to
+    virtualbox.vboxmanage(
+      ["showvminfo", "--machinereadable", linode_id],
+      (err: Error, stdout: string) => {
+        console.log(
+          stdout.split("\n").filter((line) => {
+            let kv_list = line.split("=");
+            if (kv_list[0].includes("SATA") && kv_list[1].includes("none")) {
+              return true;
+            }
+          })
+        );
+      }
+    );
     // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
     // update "updated" field with current datetime for volume and linode instance
   }
