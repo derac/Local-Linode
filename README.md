@@ -1,4 +1,6 @@
-# Linode API Sandbox
+# Local Linode
+
+Uses VirtualBox as a local backend for the Linode API. Much of the functionality of the Instances, Volumes, and Types APIs are implemented.
 
 ## Setup
 
@@ -72,6 +74,8 @@ sudo ufw enable
 - Linode Delete - cycle through all associated disks and delete them
 - Volume Create - attach to Linode instance
 - Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
+- Disk Create - attach to linode instance, add to config, etc.
+- Disk Delete - unmount it, delete the volume, delete from disks list in sql, look through all configs and delete it.
 - Require a pass when using linode create
 - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - Use disk size variable from type when creating insance, probably won't implement this any time soon
