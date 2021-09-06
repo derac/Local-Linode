@@ -68,9 +68,6 @@ sudo ufw enable
 
 ## TODO
 
-- Volume Attach/Detach - finish logic, more detail in files
-- When attaching storage, it always goes to the next sdX device name. I haven't been able to find a way around this behavior. Instead, the only way you can add volumes to a config is through disk/volume create, so just create it at the last port available. When removing a disk/volume from a config, need to shift down drives further down the list.
-- just manage the list of drives through the disk create/delete and volume attach/remove while disallowing updating the list of drives directly unless the drives are filled starting from "sda" without gaps - and managing the adding of drives chronologically so that they have the correct names.
 - Linode Reboot - Boot from config
 - Linode Delete - cycle through all associated disks and delete them
 - Volume Create - attach to Linode instance

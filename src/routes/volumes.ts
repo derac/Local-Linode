@@ -317,138 +317,133 @@ router.post("/:volumeId/attach", (req, res) => {
   }
 
   // get the volume data
-  db.get(
-    `SELECT data FROM volumes WHERE id='${volumeId}'`,
-    (err, volumes_row) => {
+  db.get(`SELECT data FROM volumes WHERE id='${volumeId}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "volumeId", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+      });
+    }
+    let volume_json = JSON.parse(row["data"]);
+
+    // get instance data
+    db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
       if (err) {
         return res
           .status(500)
-          .json({ errors: [{ field: "volumeId", reason: err }] });
+          .json({ errors: [{ field: "linode_id", reason: err }] });
       }
-      if (!volumes_row) {
+      if (!row) {
         return res.status(500).json({
-          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+          errors: [
+            {
+              field: "linode_id",
+              reason: "linode_id does not exist",
+            },
+          ],
         });
       }
-      let volume_json = JSON.parse(volumes_row["data"]);
+      let datetime = new Date().toISOString();
+      let linode_json = JSON.parse(row["data"]);
+      let configs_list: any[] = JSON.parse(row["configs"]);
+      let current_config: string = row["current_config"];
+      if (!config_id) {
+        config_id = current_config;
+      }
+      // get index of config_id in configs_list
+      let config_index = configs_list.findIndex((el) => {
+        return el["id"] == config_id;
+      });
 
-      // get instance data
-      db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ errors: [{ field: "linode_id", reason: err }] });
-        }
-        if (!row) {
+      // find the first open slot in the config
+      let device_config: any[] = configs_list[config_index]["devices"];
+      let hdd_slot = "";
+
+      for (const [k, v] of Object.entries(device_config)) {
+        if (v["disk_id"] == null && v["volume_id"] == null) {
+          hdd_slot = k;
+          break;
+        } else if (k == "sdh") {
           return res.status(500).json({
             errors: [
               {
-                field: "linode_id",
-                reason: "linode_id does not exist",
+                field: "config_id",
+                reason: "config_id does not have any open hard disk slots.",
               },
             ],
           });
         }
-        let datetime = new Date().toISOString();
-        let linode_json = JSON.parse(row["data"]);
-        let configs_list: any[] = JSON.parse(row["configs"]);
-        let current_config: string = row["current_config"];
-        if (!config_id) {
-          config_id = current_config;
-        }
-        // get index of config_id in configs_list
-        let config_index = configs_list.findIndex((el) => {
-          return el["id"] == config_id;
-        });
+      }
 
-        // find the first open slot in the config
-        let device_config: any[] = configs_list[config_index]["devices"];
-        let hdd_slot = "";
+      // get port number to attach to
+      let port_number = hdd_slot[2].charCodeAt(0) - 97;
 
-        for (const [k, v] of Object.entries(device_config)) {
-          if (v["disk_id"] == null && v["volume_id"] == null) {
-            hdd_slot = k;
-            break;
-          } else if (k == "sdh") {
-            return res.status(500).json({
-              errors: [
-                {
-                  field: "config_id",
-                  reason: "config_id does not have any open hard disk slots.",
-                },
-              ],
-            });
+      // now we're ready to attach
+      virtualbox.vboxmanage(
+        [
+          "storageattach",
+          linode_json["id"],
+          "--storagectl",
+          "SATA",
+          "--hotpluggable",
+          "on",
+          "--medium",
+          volume_json["id"],
+          "--type",
+          "hdd",
+          "--port",
+          port_number,
+        ],
+        (err: Error, _stdout: string) => {
+          if (err) {
+            return res.status(500).json({ errors: [{ reason: err }] });
           }
-        }
+          // successfully attached
 
-        // get port number to attach to
-        let port_number = hdd_slot[2].charCodeAt(0) - 97;
+          // set updated fields
+          configs_list[config_index]["devices"][hdd_slot]["volume_id"] =
+            volumeId;
+          volume_json["linode_id"] = linode_json["id"];
+          volume_json["linode_label"] = linode_json["label"];
+          linode_json["updated"] = datetime;
+          volume_json["updated"] = datetime;
 
-        // now we're ready to attach
-        virtualbox.vboxmanage(
-          [
-            "storageattach",
-            linode_json["id"],
-            "--storagectl",
-            "SATA",
-            "--hotpluggable",
-            "on",
-            "--medium",
-            volume_json["id"],
-            "--type",
-            "hdd",
-            "--port",
-            port_number,
-          ],
-          (err: Error, stdout: string) => {
-            if (err) {
-              return res
-                .status(500)
-                .json({ errors: [{ field: "linode_id", reason: err }] });
-            }
-            // successfully attached
-
-            // set updated fields
-            configs_list[config_index]["devices"][hdd_slot]["volume_id"] =
-              volumeId;
-            volume_json["linode_id"] = linode_json["id"];
-            volume_json["linode_label"] = linode_json["label"];
-            linode_json["updated"] = datetime;
-            volume_json["updated"] = datetime;
-
-            db.run(
-              `UPDATE instances SET data = '${JSON.stringify(
-                linode_json
-              )}', configs = '${JSON.stringify(
-                configs_list
-              )}' WHERE id='${linode_id}'`,
-              (err) => {
-                if (err) {
-                  return res
-                    .status(500)
-                    .json({ errors: [{ field: "linode_id", reason: err }] });
-                }
-                db.run(
-                  `UPDATE volumes SET data = '${JSON.stringify(
-                    volume_json
-                  )}' WHERE id='${volumeId}'`,
-                  (err) => {
-                    if (err) {
-                      return res.status(500).json({
-                        errors: [{ field: "volumeId", reason: err }],
-                      });
-                    }
-                    // complete :)
-                    return res.json(volume_json);
-                  }
-                );
+          db.run(
+            `UPDATE instances SET data = '${JSON.stringify(
+              linode_json
+            )}', configs = '${JSON.stringify(
+              configs_list
+            )}' WHERE id='${linode_id}'`,
+            (err) => {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ errors: [{ field: "linode_id", reason: err }] });
               }
-            );
-          }
-        );
-      });
-    }
-  );
+              db.run(
+                `UPDATE volumes SET data = '${JSON.stringify(
+                  volume_json
+                )}' WHERE id='${volumeId}'`,
+                (err) => {
+                  if (err) {
+                    return res.status(500).json({
+                      errors: [{ field: "volumeId", reason: err }],
+                    });
+                  }
+                  // complete :)
+                  return res.json(volume_json);
+                }
+              );
+            }
+          );
+        }
+      );
+    });
+  });
 });
 
 // Volume Detach
@@ -495,10 +490,6 @@ router.post("/:volumeId/detach", (req, res) => {
       });
 
       let port_number;
-      volume_json["linode_id"] = "";
-      volume_json["linode_label"] = "";
-      linode_json["updated"] = datetime;
-      volume_json["updated"] = datetime;
 
       // find the hdd slot this volume is on, exit if it's not on the current config
       let device_config: any[] = configs_list[config_index]["devices"];
@@ -536,6 +527,11 @@ router.post("/:volumeId/detach", (req, res) => {
             return res.status(500).json({ errors: [{ reason: err }] });
           }
           // successfully detached
+
+          volume_json["linode_id"] = "";
+          volume_json["linode_label"] = "";
+          linode_json["updated"] = datetime;
+          volume_json["updated"] = datetime;
 
           // update sql
           db.run(
