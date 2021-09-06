@@ -391,6 +391,8 @@ router.post("/:volumeId/attach", (req, res) => {
             linode_json["id"],
             "--storagectl",
             "SATA",
+            "--hotpluggable",
+            "on",
             "--medium",
             volume_json["id"],
             "--type",
@@ -492,29 +494,18 @@ router.post("/:volumeId/detach", (req, res) => {
         return el["id"] == current_config;
       });
 
-      const letter_range = (start: string, stop: string) => {
-        var result = [];
-        for (
-          var idx = start.charCodeAt(0), end = stop.charCodeAt(0);
-          idx <= end;
-          ++idx
-        ) {
-          result.push(String.fromCharCode(idx));
-        }
-        return result;
-      };
+      let port_number;
+      volume_json["linode_id"] = "";
+      volume_json["linode_label"] = "";
+      linode_json["updated"] = datetime;
+      volume_json["updated"] = datetime;
 
       // find the hdd slot this volume is on, exit if it's not on the current config
       let device_config: any[] = configs_list[config_index]["devices"];
       for (const [k, v] of Object.entries(device_config)) {
         if (v["volume_id"] == volume_id) {
+          port_number = k[2].charCodeAt(0) - 97;
           configs_list[config_index]["devices"][k]["volume_id"] = null;
-          for (let letter in letter_range(
-            String.fromCharCode(k[2].charCodeAt(0) + 1),
-            "h"
-          )) {
-            console.log(letter);
-          }
           break;
         } else if (k == "sdh") {
           return res.status(500).json({
@@ -527,17 +518,57 @@ router.post("/:volumeId/detach", (req, res) => {
         }
       }
 
-      linode_json["updated"] = datetime;
-      volume_json["updated"] = datetime;
+      virtualbox.vboxmanage(
+        [
+          "storageattach",
+          linode_id,
+          "--storagectl",
+          "SATA",
+          "--medium",
+          "none",
+          "--type",
+          "hdd",
+          "--port",
+          port_number,
+        ],
+        (err: Error, _stdout: string) => {
+          if (err) {
+            return res.status(500).json({ errors: [{ reason: err }] });
+          }
+          // successfully detached
 
-      console.log(configs_list);
-      //console.log(linode_json, volume_json, configs_list);
-
-      // remove linode_id and linode_label from the config sql
-      // update other params
-      return res.json({});
+          // update sql
+          db.run(
+            `UPDATE instances SET data = '${JSON.stringify(
+              linode_json
+            )}', configs = '${JSON.stringify(
+              configs_list
+            )}' WHERE id='${linode_id}'`,
+            (err) => {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ errors: [{ field: "linode_id", reason: err }] });
+              }
+              db.run(
+                `UPDATE volumes SET data = '${JSON.stringify(
+                  volume_json
+                )}' WHERE id='${volume_id}'`,
+                (err) => {
+                  if (err) {
+                    return res.status(500).json({
+                      errors: [{ field: "volumeId", reason: err }],
+                    });
+                  }
+                  // complete :)
+                  return res.json({});
+                }
+              );
+            }
+          );
+        }
+      );
     });
-    // vboxmanage storageattach volumeId --storagectl "SATA" --medium none --type hdd --port PORTNUM
   });
 });
 
