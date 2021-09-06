@@ -381,23 +381,69 @@ router.post("/:volumeId/attach", (req, res) => {
           }
         }
 
-        console.log(hdd_slot);
-        // set updated fields
-        linode_json["updated"] = datetime;
-        volume_json["updated"] = datetime;
+        // get port number to attach to
+        let port_number = hdd_slot[2].charCodeAt(0) - 97;
 
-        // update sql for the instance and volume
+        // now we're ready to attach
+        virtualbox.vboxmanage(
+          [
+            "storageattach",
+            linode_json["id"],
+            "--storagectl",
+            "SATA",
+            "--medium",
+            volume_json["id"],
+            "--type",
+            "hdd",
+            "--port",
+            port_number,
+          ],
+          (err: Error, stdout: string) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ errors: [{ field: "linode_id", reason: err }] });
+            }
+            // successfully attached
 
-        // console.log(
-        //   volume_json,
-        //   linode_json,
-        //   configs_list[config_index],
-        //   config_id,
-        //   config_index,
-        //   configs_list[config_index]["devices"]
-        // );
-        // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
-        // update "updated" field with current datetime for volume and linode instance
+            // set updated fields
+            configs_list[config_index]["devices"][hdd_slot]["volume_id"] =
+              volumeId;
+            volume_json["linode_id"] = linode_json["id"];
+            volume_json["linode_label"] = linode_json["label"];
+            linode_json["updated"] = datetime;
+            volume_json["updated"] = datetime;
+
+            db.run(
+              `UPDATE instances SET data = '${JSON.stringify(
+                linode_json
+              )}', configs = '${JSON.stringify(
+                configs_list
+              )}' WHERE id='${linode_id}'`,
+              (err) => {
+                if (err) {
+                  return res
+                    .status(500)
+                    .json({ errors: [{ field: "linode_id", reason: err }] });
+                }
+                db.run(
+                  `UPDATE volumes SET data = '${JSON.stringify(
+                    volume_json
+                  )}' WHERE id='${volumeId}'`,
+                  (err) => {
+                    if (err) {
+                      return res.status(500).json({
+                        errors: [{ field: "volumeId", reason: err }],
+                      });
+                    }
+                    // complete :)
+                    return res.json(volume_json);
+                  }
+                );
+              }
+            );
+          }
+        );
       });
     }
   );
