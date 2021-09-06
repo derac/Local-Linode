@@ -356,7 +356,7 @@ router.post("/:volumeId/attach", (req, res) => {
         if (!config_id) {
           config_id = current_config;
         }
-        // get index of config_id in configs_json
+        // get index of config_id in configs_list
         let config_index = configs_list.findIndex((el) => {
           return el["id"] == config_id;
         });
@@ -451,50 +451,94 @@ router.post("/:volumeId/attach", (req, res) => {
 
 // Volume Detach
 router.post("/:volumeId/detach", (req, res) => {
-  db.get(
-    `SELECT data FROM volumes WHERE id='${req.params.volumeId}'`,
-    (err, row) => {
+  let volume_id = req.params.volumeId;
+  db.get(`SELECT data FROM volumes WHERE id='${volume_id}'`, (err, row) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ errors: [{ field: "volumeId", reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+      });
+    }
+    let datetime = new Date().toISOString();
+    let volume_json = JSON.parse(row["data"]);
+    let linode_id = volume_json["linode_id"];
+    if (!linode_id) {
+      return res.status(500).json({
+        errors: [
+          { reason: "This volume isn't attached to any linode instance" },
+        ],
+      });
+    }
+
+    db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
       if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "volumeId", reason: err }] });
+        return res.status(500).json({ errors: [{ reason: err }] });
       }
       if (!row) {
         return res.status(500).json({
-          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
+          errors: [{ reason: "linode_id does not exist" }],
         });
       }
-      let datetime = new Date().toISOString();
-      let volume_json = JSON.parse(row["data"]);
-      let volume_uuid = volume_json["id"];
-      let linode_id = volume_json["linode_id"];
-      if (!linode_id) {
-        return res.status(500).json({
-          errors: [
-            { reason: "This volume isn't attached to any linode instance" },
-          ],
-        });
-      }
-      virtualbox.vboxmanage(
-        ["showvminfo", "--machinereadable", linode_id],
-        (err: Error, stdout: string) => {
-          if (err) {
-            return res.status(500).json({ errors: [{ reason: err }] });
-          }
-          let SATA_drives = stdout.split("\n").filter((line) => {
-            return line.includes("SATA");
-          });
-          volume_json["updated"] = datetime;
-          console.log(SATA_drives);
+
+      let linode_json = JSON.parse(row["data"]);
+      let configs_list: any[] = JSON.parse(row["configs"]);
+      let current_config = row["current_config"];
+      // get index of config_id in configs_list
+      let config_index = configs_list.findIndex((el) => {
+        return el["id"] == current_config;
+      });
+
+      const letter_range = (start: string, stop: string) => {
+        var result = [];
+        for (
+          var idx = start.charCodeAt(0), end = stop.charCodeAt(0);
+          idx <= end;
+          ++idx
+        ) {
+          result.push(String.fromCharCode(idx));
         }
-      );
-      // get port number associated with this uuid
-      // vboxmanage storageattach volumeId --storagectl "SATA" --medium none --type hdd --port PORTNUM
-      // if successful
+        return result;
+      };
+
+      // find the hdd slot this volume is on, exit if it's not on the current config
+      let device_config: any[] = configs_list[config_index]["devices"];
+      for (const [k, v] of Object.entries(device_config)) {
+        if (v["volume_id"] == volume_id) {
+          configs_list[config_index]["devices"][k]["volume_id"] = null;
+          for (let letter in letter_range(
+            String.fromCharCode(k[2].charCodeAt(0) + 1),
+            "h"
+          )) {
+            console.log(letter);
+          }
+          break;
+        } else if (k == "sdh") {
+          return res.status(500).json({
+            errors: [
+              {
+                reason: "The current config does not have this volume mounted.",
+              },
+            ],
+          });
+        }
+      }
+
+      linode_json["updated"] = datetime;
+      volume_json["updated"] = datetime;
+
+      console.log(configs_list);
+      //console.log(linode_json, volume_json, configs_list);
+
       // remove linode_id and linode_label from the config sql
+      // update other params
       return res.json({});
-    }
-  );
+    });
+    // vboxmanage storageattach volumeId --storagectl "SATA" --medium none --type hdd --port PORTNUM
+  });
 });
 
 export default router;
