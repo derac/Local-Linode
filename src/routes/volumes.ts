@@ -290,11 +290,21 @@ router.post("/:volumeId/resize", (req, res) => {
 });
 
 // Volume Attach
+// disallow persist_across_boots being false to work around mounting device name issue
 router.post("/:volumeId/attach", (req, res) => {
   let config_id = req.headers.config_id;
   let linode_id = req.headers.linode_id;
-  let persist_across_boots =
-    req.headers.persist_across_boots == "false" ? false : true;
+  if (req.headers.persist_across_boots == "false") {
+    return res.status(500).json({
+      errors: [
+        {
+          field: "persist_across_boots",
+          reason: "persist_across_boots must be true in this implementation.",
+        },
+      ],
+    });
+  }
+  let volumeId = req.params.volumeId as string;
   if (!linode_id) {
     return res.status(500).json({
       errors: [
@@ -305,54 +315,92 @@ router.post("/:volumeId/attach", (req, res) => {
       ],
     });
   }
-  console.log(persist_across_boots, config_id, linode_id);
-  if (persist_across_boots) {
-    db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+
+  // get the volume data
+  db.get(
+    `SELECT data FROM volumes WHERE id='${volumeId}'`,
+    (err, volumes_row) => {
       if (err) {
         return res
           .status(500)
-          .json({ errors: [{ field: "linode_id", reason: err }] });
+          .json({ errors: [{ field: "volumeId", reason: err }] });
       }
-      if (!row) {
+      if (!volumes_row) {
         return res.status(500).json({
-          errors: [{ field: "linode_id", reason: "linode_id does not exist" }],
+          errors: [{ field: "volumeId", reason: "volumeId does not exist" }],
         });
       }
-      let datetime = new Date().toISOString();
-      let linode_json = JSON.parse(row["data"]);
-      // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
-      // update "updated" field with current datetime for volume and linode instance (and config)
-    });
-  } else {
-    // find port number to attach to
-    virtualbox.vboxmanage(
-      ["showvminfo", "--machinereadable", linode_id],
-      (err: Error, stdout: string) => {
+      let volume_json = JSON.parse(volumes_row["data"]);
+
+      // get instance data
+      db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
         if (err) {
           return res
             .status(500)
             .json({ errors: [{ field: "linode_id", reason: err }] });
         }
-        let first_open_SATA_device = stdout.split("\n").find((line) => {
-          return line.includes("SATA") && line.includes("none");
-        });
-        if (!first_open_SATA_device) {
+        if (!row) {
           return res.status(500).json({
             errors: [
               {
-                reason: "No available slots for more SATA devices on this VM.",
+                field: "linode_id",
+                reason: "linode_id does not exist",
               },
             ],
           });
         }
-        let port_num = first_open_SATA_device.split("=")[0].split("-")[1];
-        console.log(port_num);
-        return res.json({});
-      }
-    );
-    // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
-    // update "updated" field with current datetime for volume and linode instance
-  }
+        let datetime = new Date().toISOString();
+        let linode_json = JSON.parse(row["data"]);
+        let configs_list: any[] = JSON.parse(row["configs"]);
+        let current_config: string = row["current_config"];
+        if (!config_id) {
+          config_id = current_config;
+        }
+        // get index of config_id in configs_json
+        let config_index = configs_list.findIndex((el) => {
+          return el["id"] == config_id;
+        });
+
+        // find the first open slot in the config
+        let device_config: any[] = configs_list[config_index]["devices"];
+        let hdd_slot = "";
+
+        for (const [k, v] of Object.entries(device_config)) {
+          if (v["disk_id"] == null && v["volume_id"] == null) {
+            hdd_slot = k;
+            break;
+          } else if (k == "sdh") {
+            return res.status(500).json({
+              errors: [
+                {
+                  field: "config_id",
+                  reason: "config_id does not have any open hard disk slots.",
+                },
+              ],
+            });
+          }
+        }
+
+        console.log(hdd_slot);
+        // set updated fields
+        linode_json["updated"] = datetime;
+        volume_json["updated"] = datetime;
+
+        // update sql for the instance and volume
+
+        // console.log(
+        //   volume_json,
+        //   linode_json,
+        //   configs_list[config_index],
+        //   config_id,
+        //   config_index,
+        //   configs_list[config_index]["devices"]
+        // );
+        // vboxmanage storageattach VMID --storagectl "SATA" --medium VOLUMEORDISKUUID --type hdd --port PORT NUMBER ASSOCIATED WITH CONFIG SPOT
+        // update "updated" field with current datetime for volume and linode instance
+      });
+    }
+  );
 });
 
 // Volume Detach
