@@ -68,6 +68,10 @@ sudo ufw enable
 
 ## TODO
 
+- Solution to config hard drive ordering:
+  - On volume/disk create - put in first available slot
+  - On delete/remove - simple remove from the slot leaving open hole in config
+  - On setting config, pack drives to the front of the config and save before loading drives.
 - Linode Reboot - Boot from config
 - Linode Delete - cycle through all associated disks and delete them
 - Volume Create - attach to Linode instance
