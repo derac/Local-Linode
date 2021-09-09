@@ -34,12 +34,10 @@ router.get("/", (req, res) => {
 // Linode Create
 router.post("/", (req, res) => {
   let label: string = req.headers.label
-      ? (req.headers.label as string)
-      : [...Array(32)]
-          .map(() => (~~(Math.random() * 36)).toString(36))
-          .join(""),
-    datetime: string = new Date().toISOString(),
-    tags: string[] = [];
+    ? (req.headers.label as string)
+    : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+  let datetime: string = new Date().toISOString();
+  let tags: string[] = [];
 
   // process tags header
   try {
