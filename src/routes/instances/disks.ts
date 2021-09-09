@@ -2,6 +2,7 @@ import path from "path";
 
 import express from "express";
 import { db } from "../../setup/sqlite3_db";
+import { virtualbox, default_machine_folder } from "../../setup/virtualbox";
 
 const router = express.Router({ mergeParams: true });
 
@@ -29,7 +30,57 @@ router.get("/", (req, res) => {
 });
 
 // Disk Create
-router.post("/", (req, res) => {});
+router.post("/", (req, res) => {
+  let size: number = req.headers.size
+    ? parseInt(req.headers.size as string)
+    : 20;
+  let label: string = req.headers.label
+    ? (req.headers.label as string)
+    : [...Array(48)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+  let datetime: string = new Date().toISOString();
+  let linode_id = (req.params as any).linodeId;
+  // first get linode instance data from sqlite
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({ errors: [{ reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ reason: "linode_id does not exist" }],
+      });
+    }
+    virtualbox.vboxmanage(
+      [
+        "createmedium",
+        "--format",
+        "VDI",
+        "--size",
+        size * 1024,
+        "--filename",
+        path.join(default_machine_folder, label),
+      ],
+      (err: Error, stdout: string) => {
+        if (err) {
+          return res.status(500).json({
+            errors: [{ reason: err }],
+          });
+        }
+        let disk_uuid = stdout.split(": ")[1].trim();
+        let disk_json = {
+          created: datetime,
+          filesystem: "ext4",
+          id: disk_uuid,
+          label: label,
+          size: size,
+          status: "ready",
+          updated: datetime,
+        };
+        let disks_list = JSON.parse(row["disks"]).append(disk_json);
+        return res.json(disks_list);
+      }
+    );
+  });
+});
 
 // Disk Delete
 router.delete("/:diskId", (req, res) => {});
