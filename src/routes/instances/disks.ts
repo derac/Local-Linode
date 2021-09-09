@@ -142,7 +142,8 @@ router.post("/", (req, res) => {
               status: "ready",
               updated: datetime,
             };
-            let disks_list = JSON.parse(row["disks"]).append(disk_json);
+            let disks_list = JSON.parse(row["disks"]);
+            disks_list.push(disk_json);
             configs_list[config_index]["devices"][hdd_slot]["disk_id"] =
               disk_uuid;
             linode_json["updated"] = datetime;

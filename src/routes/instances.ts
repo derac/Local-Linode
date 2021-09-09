@@ -135,7 +135,7 @@ router.post("/", (req, res) => {
                       // get disk uuid from kv output of showvminfo
                       let disk_uuid = stdout.split("\n").filter((line) => {
                         let kv_arr = line.split("=");
-                        if (kv_arr[0].includes("UUID")) {
+                        if (kv_arr[0] == "UUID") {
                           return kv_arr[1].trim().replace(/['"]+/g, "");
                         }
                       });
