@@ -133,12 +133,14 @@ router.post("/", (req, res) => {
                     ["showvminfo", "--machinereadable", label],
                     (err: Error, stdout: string) => {
                       // get disk uuid from kv output of showvminfo
-                      let disk_uuid = stdout.split("\n").filter((line) => {
-                        let kv_arr = line.split("=");
-                        if (kv_arr[0] == "UUID") {
-                          return kv_arr[1].trim().replace(/['"]+/g, "");
-                        }
-                      });
+                      let disk_uuid = stdout
+                        .split("\n")
+                        .find((line) => {
+                          return line.split("=")[0] == "UUID";
+                        })
+                        ?.split("=")[1]
+                        .trim()
+                        .replace(/['"]+/g, "");
                       let res_json = {
                         alerts: {
                           cpu: 180,
