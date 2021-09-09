@@ -1,14 +1,11 @@
 import path from "path";
 
 import express from "express";
-import sqlite3 from "sqlite3";
 
+import { db } from "../setup/sqlite3_db";
 import { virtualbox, default_machine_folder } from "../setup/virtualbox";
 
 const router = express.Router();
-const db = new sqlite3.Database(
-  path.join(__dirname, "../data/database.sqlite3")
-);
 
 // ===== Linode Volumes API =====
 // /v4/volumes
@@ -29,19 +26,19 @@ router.get("/", (req, res) => {
 
 // Volume Create
 router.post("/", (req, res) => {
-  let config_id: number | null,
-    label: string = req.headers.label
-      ? (req.headers.label as string)
-      : [...Array(32)]
-          .map(() => (~~(Math.random() * 36)).toString(36))
-          .join(""),
-    linode_id: number | null = req.headers.linode_id
-      ? parseInt(req.headers.linode_id as string)
-      : null,
-    region: string | null,
-    size: number = req.headers.size ? parseInt(req.headers.size as string) : 20,
-    tags: string[] = [],
-    datetime = new Date().toISOString();
+  let config_id: number | null;
+  let label: string = req.headers.label
+    ? (req.headers.label as string)
+    : [...Array(32)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
+  let linode_id: number | null = req.headers.linode_id
+    ? parseInt(req.headers.linode_id as string)
+    : null;
+  let region: string | null;
+  let size: number = req.headers.size
+    ? parseInt(req.headers.size as string)
+    : 20;
+  let tags: string[] = [];
+  let datetime = new Date().toISOString();
   if (!(2 < label.length && label.length < 33)) {
     return res.status(500).json({
       errors: [
@@ -389,8 +386,6 @@ router.post("/:volumeId/attach", (req, res) => {
           linode_json["id"],
           "--storagectl",
           "SATA",
-          "--hotpluggable",
-          "on",
           "--medium",
           volume_json["id"],
           "--type",
@@ -524,7 +519,13 @@ router.post("/:volumeId/detach", (req, res) => {
         ],
         (err: Error, _stdout: string) => {
           if (err) {
-            return res.status(500).json({ errors: [{ reason: err }] });
+            return res.status(500).json({
+              errors: [
+                {
+                  reason: `The VM must be turned off before detaching the Volume, due to limitations in Virtualbox. This is likely why you are seeing this message. \n${err}`,
+                },
+              ],
+            });
           }
           // successfully detached
 
