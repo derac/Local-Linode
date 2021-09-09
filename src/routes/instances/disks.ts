@@ -39,6 +39,7 @@ router.post("/", (req, res) => {
     : [...Array(48)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
   let datetime: string = new Date().toISOString();
   let linode_id = (req.params as any).linodeId;
+
   // first get linode instance data from sqlite
   db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
     if (err) {
@@ -49,6 +50,54 @@ router.post("/", (req, res) => {
         errors: [{ reason: "linode_id does not exist" }],
       });
     }
+
+    // check that this linode instance is on
+    let linode_json = JSON.parse(row["data"]);
+    if (linode_json["status"] != "running") {
+      return res.status(500).json({
+        errors: [
+          {
+            reason:
+              "The linode you've chosen is not running. This information is taken from the database.",
+          },
+        ],
+      });
+    }
+    let current_config = row["current_config"];
+    let configs_list: any[] = JSON.parse(row["configs"]);
+    let config_index = configs_list.findIndex((el) => {
+      return el["id"] == current_config;
+    });
+    // sanity check that the current config exists
+    if (!config_index) {
+      return res.status(500).json({
+        errors: [
+          {
+            reason:
+              "The current config isn't in the list of configs. This indicates a corrupt sqlite database.",
+          },
+        ],
+      });
+    }
+    // get the hdd slot we will attach to.
+    let device_config: any[] = configs_list[config_index]["devices"];
+    let hdd_slot = "";
+    for (const [k, v] of Object.entries(device_config)) {
+      if (v["disk_id"] == null && v["volume_id"] == null) {
+        hdd_slot = k;
+        break;
+      } else if (k == "sdh") {
+        return res.status(500).json({
+          errors: [
+            {
+              field: "current_config",
+              reason: "Current config does not have any open hard disk slots.",
+            },
+          ],
+        });
+      }
+    }
+    let port_number = hdd_slot[2].charCodeAt(0) - 97;
     virtualbox.vboxmanage(
       [
         "createmedium",
@@ -76,6 +125,8 @@ router.post("/", (req, res) => {
           updated: datetime,
         };
         let disks_list = JSON.parse(row["disks"]).append(disk_json);
+        // TODO: we need to log into the machine and format the drive as ext4
+        // TODO: after creation, we need to add the disk to the current config and disks list
         return res.json(disks_list);
       }
     );
