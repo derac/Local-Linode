@@ -115,19 +115,59 @@ router.post("/", (req, res) => {
           });
         }
         let disk_uuid = stdout.split(": ")[1].trim();
-        let disk_json = {
-          created: datetime,
-          filesystem: "ext4",
-          id: disk_uuid,
-          label: label,
-          size: size,
-          status: "ready",
-          updated: datetime,
-        };
-        let disks_list = JSON.parse(row["disks"]).append(disk_json);
-        // TODO: we need to log into the machine and format the drive as ext4
-        // TODO: after creation, we need to add the disk to the current config and disks list
-        return res.json(disks_list);
+        // attach disk to linode intance
+        virtualbox.vboxmanage(
+          [
+            "storageattach",
+            linode_id,
+            "--storagectl",
+            "SATA",
+            "--medium",
+            disk_uuid,
+            "--type",
+            "hdd",
+            "--port",
+            port_number,
+          ],
+          (err: Error, _stdout: string) => {
+            if (err) {
+              return res.status(500).json({ errors: [{ reason: err }] });
+            }
+            let disk_json = {
+              created: datetime,
+              filesystem: "ext4",
+              id: disk_uuid,
+              label: label,
+              size: size,
+              status: "ready",
+              updated: datetime,
+            };
+            let disks_list = JSON.parse(row["disks"]).append(disk_json);
+            configs_list[config_index]["devices"][hdd_slot]["disk_id"] =
+              disk_uuid;
+            linode_json["updated"] = datetime;
+            // TODO: we need to log into the machine and format the drive as ext4
+            // we need to update disks list, config, and linode data in sqlite
+            db.run(
+              `UPDATE instances SET data = '${JSON.stringify(
+                linode_json
+              )}', configs = '${JSON.stringify(
+                configs_list
+              )}', disks = '${JSON.stringify(
+                disks_list
+              )}' WHERE id='${linode_id}'`,
+              (err) => {
+                if (err) {
+                  return res
+                    .status(500)
+                    .json({ errors: [{ field: "linode_id", reason: err }] });
+                }
+                // return successfully
+                return res.json(disk_json);
+              }
+            );
+          }
+        );
       }
     );
   });
