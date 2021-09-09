@@ -69,7 +69,7 @@ router.post("/", (req, res) => {
       return el["id"] == current_config;
     });
     // sanity check that the current config exists
-    if (!config_index) {
+    if (config_index == -1) {
       return res.status(500).json({
         errors: [
           {
