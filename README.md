@@ -68,16 +68,9 @@ sudo ufw enable
 
 ## TODO
 
-- Solution to config hard drive ordering:
-  - On volume/disk create - put in first available slot
-  - On delete/remove - simple remove from the slot leaving open hole in config
-  - On setting config, pack drives to the front of the config and save before loading drives.
+- On setting config, pack drives to the front of the config and save before loading drives.
 - Linode Reboot - Boot from config
 - Linode Delete - cycle through all associated disks and delete them
-- Volume Create - attach to Linode instance
-- Volume Delete - need to detach from current linode and add code to and config switching behavior to check if the volume exists
-- Disk Create - attach to linode instance, add to config, etc.
-- Disk Delete - unmount it, delete the volume, delete from disks list in sql, look through all configs and delete it.
 - Require a pass when using linode create
 - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - Use disk size variable from type when creating insance, probably won't implement this any time soon

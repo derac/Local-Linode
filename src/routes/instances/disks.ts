@@ -174,7 +174,98 @@ router.post("/", (req, res) => {
 });
 
 // Disk Delete
-router.delete("/:diskId", (req, res) => {});
+router.delete("/:diskId", (req, res) => {
+  let disk_id = req.params.diskId;
+  let linode_id = (req.params as any).linodeId;
+  let datetime = new Date().toISOString();
+  // first get linode instance data from sqlite
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({ errors: [{ reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ reason: "linode_id does not exist" }],
+      });
+    }
+    let linode_json = JSON.parse(row["data"]);
+    let current_config = row["current_config"];
+    let disks_list: any[] = JSON.parse(row["disks"]);
+    let configs_list: any[] = JSON.parse(row["configs"]);
+    // get index of config_id in configs_list
+    let config_index = configs_list.findIndex((el) => {
+      return el["id"] == current_config;
+    });
+
+    let port_number;
+
+    // find the hdd slot this volume is on, exit if it's not on the current config
+    let device_config: any[] = configs_list[config_index]["devices"];
+    for (const [k, v] of Object.entries(device_config)) {
+      if (v["disk_id"] == disk_id) {
+        port_number = k[2].charCodeAt(0) - 97;
+        configs_list[config_index]["devices"][k]["disk_id"] = null;
+        break;
+      } else if (k == "sdh") {
+        return res.status(500).json({
+          errors: [
+            {
+              reason: "The current config does not have this disk mounted.",
+            },
+          ],
+        });
+      }
+    }
+
+    virtualbox.vboxmanage(
+      [
+        "storageattach",
+        linode_id,
+        "--storagectl",
+        "SATA",
+        "--medium",
+        "none",
+        "--type",
+        "hdd",
+        "--port",
+        port_number,
+      ],
+      (err: Error, _stdout: string) => {
+        if (err) {
+          return res.status(500).json({
+            errors: [
+              {
+                reason: `Failed to detach Disk from Instance. In virtualbox, this drive may not have hotswappable set.\n${err}`,
+              },
+            ],
+          });
+        }
+        // successfully deleted drive
+        // filter disk id out of disks list
+        disks_list = disks_list.filter((el) => {
+          return el["id"] != disk_id;
+        });
+        linode_json["updated"] = datetime;
+        // update disks, configs, and linode data in sql
+        db.run(
+          `UPDATE instances SET data = '${JSON.stringify(
+            linode_json
+          )}', configs = '${JSON.stringify(
+            configs_list
+          )}', disks = '${JSON.stringify(disks_list)}' WHERE id='${linode_id}'`,
+          (err) => {
+            if (err) {
+              return res
+                .status(500)
+                .json({ errors: [{ field: "linode_id", reason: err }] });
+            }
+            return res.json({});
+          }
+        );
+      }
+    );
+  });
+});
 
 // Disk View
 router.get("/:diskId", (req, res) => {

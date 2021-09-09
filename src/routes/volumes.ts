@@ -522,7 +522,7 @@ router.post("/:volumeId/detach", (req, res) => {
             return res.status(500).json({
               errors: [
                 {
-                  reason: `The VM must be turned off before detaching the Volume, due to limitations in Virtualbox. This is likely why you are seeing this message. \n${err}`,
+                  reason: `Failed to detach Volume from Instance. In virtualbox, this drive may not have hotswappable set.\n${err}`,
                 },
               ],
             });
