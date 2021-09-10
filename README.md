@@ -4,6 +4,7 @@ Uses VirtualBox as a local backend for the Linode API. Much of the functionality
 
 ## Setup
 
+1. Download [Ubuntu Server 20.04](https://ubuntu.com/download/server) iso.
 1. Install [VirtualBox](https://www.virtualbox.org/wiki/Downloads) onto the system.
 1. Follow the VirtualBox machine template setup instructions below.
 1. `npm install`
@@ -12,7 +13,6 @@ Uses VirtualBox as a local backend for the Linode API. Much of the functionality
 
 ## VirtualBox machine template setup
 
-1. Download [Ubuntu Server 20.04](https://ubuntu.com/download/server)
 1. In VirtualBox Manager:
    1. Machine > New... (or ctrl+n)
       1. Name it `ubuntu server template` > Create
@@ -65,6 +65,10 @@ sudo ufw enable
   - Look at the source for most up-to-date API usage info
 - [vboxmanage](https://www.virtualbox.org/manual/ch08.html)
   - this is what node-virtualbox uses under the hood to control virtualbox
+
+## Postman collection for testing
+[test/Local-Linode API.postman_collection.json](Postman collection json file.)
+![image](https://user-images.githubusercontent.com/6697473/132897366-d2badc03-c42f-495f-8de4-e6ea844bb633.png)
 
 ## TODO
 
