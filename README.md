@@ -74,14 +74,16 @@ sudo ufw enable
 
 ## not implemented
 
-- resizing disks and volumes largely, just create a large volume since it's dynamic in virutalbox. Could ignore resize instead of sending error if desired.
 - many of the options for creating a new instance and config, such as interfaces
 
 ## TODO
 
-- Linode Delete - cycle through all associated disks and delete them
-- On setting config, pack drives to the front of the config and save before loading drives.
-- Linode Reboot - Boot from config
-- Require a pass when using linode create
-- Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
+- config booting
+  - Linode Delete - cycle through all associated disks and delete them
+  - On setting config, pack drives to the front of the config and save before loading drives.
+  - Linode Reboot - Boot from config
+- password
+  - Require a pass when using linode create
+  - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
+- resizing disks and volumes
 - Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
