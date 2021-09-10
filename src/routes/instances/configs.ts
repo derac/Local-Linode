@@ -99,7 +99,53 @@ router.post("/", (req, res) => {
 });
 
 // Configuration Profile Delete
-router.delete("/:configId", (req, res) => {});
+router.delete("/:configId", (req, res) => {
+  let linode_id = (req.params as any).linodeId;
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({ errors: [{ reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ reason: "linode_id does not exist" }],
+      });
+    }
+    let configs_list: any[] = JSON.parse(row["configs"]);
+    let current_config = row["current_config"];
+    // disallow removing current config
+    if (current_config == req.params.configId) {
+      return res.status(500).json({
+        errors: [
+          {
+            reason:
+              "configId is the same as current_config for this linode instance. Can't delete it.",
+          },
+        ],
+      });
+    }
+
+    // remove config id from the list
+    configs_list = configs_list.filter((config) => {
+      return config["id"] != req.params.configId;
+    });
+
+    // update sql
+    db.run(
+      `UPDATE instances SET configs = '${JSON.stringify(
+        configs_list
+      )}' WHERE id='${linode_id}'`,
+      (err) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linode_id", reason: err }] });
+        }
+        // return successfully
+        return res.json({});
+      }
+    );
+  });
+});
 
 // Configuration Profile View
 router.get("/:configId", (req, res) => {
