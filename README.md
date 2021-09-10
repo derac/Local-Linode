@@ -78,6 +78,7 @@ sudo ufw enable
 
 ## TODO
 
+- formatting disk as ext4 on creation
 - config booting
   - Linode Delete - cycle through all associated disks and delete them
   - On setting config, pack drives to the front of the config and save before loading drives.
