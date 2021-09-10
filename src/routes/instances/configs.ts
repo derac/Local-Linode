@@ -32,9 +32,18 @@ router.get("/", (req, res) => {
 router.post("/", (req, res) => {
   let linode_id = (req.params as any).linodeId;
   let comments = req.headers.comments ? req.headers.comments : "";
-  let devices = req.headers.devices;
+  let devices: any;
+  try {
+    devices = JSON.parse(req.headers.devices as string);
+  } catch {
+    return res
+      .status(500)
+      .json({ errors: [{ reason: "Invalid devices JSON." }] });
+  }
+  let label: string = req.headers.label
+    ? (req.headers.label as string)
+    : [...Array(48)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
   console.log(devices);
-  res.json({});
   // get linode instance info from database
   db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
     if (err) {
@@ -45,8 +54,33 @@ router.post("/", (req, res) => {
         errors: [{ reason: "linode_id does not exist" }],
       });
     }
-    let disks_list: any[] = JSON.parse(row["disks"]);
     let configs_list: any[] = JSON.parse(row["configs"]);
+    // we don't bother to check if it's valid
+    // if there is an issue with the config, it will be obvious when booting it
+    let config_json = {
+      comments: comments,
+      devices: devices,
+      helpers: {
+        devtmpfs_automount: false,
+        distro: false,
+        modules_dep: false,
+        network: true,
+        updatedb_disabled: true,
+      },
+      id: label,
+      interfaces: [],
+      kernel: "linode/latest-64bit",
+      label: label,
+      memory_limit: 2048,
+      root_device: "/dev/sda",
+      run_level: "default",
+      virt_mode: "paravirt",
+    };
+    configs_list.push(config_json);
+
+    // update sql
+
+    res.json(configs_list);
   });
 });
 
