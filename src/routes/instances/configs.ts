@@ -43,7 +43,6 @@ router.post("/", (req, res) => {
   let label: string = req.headers.label
     ? (req.headers.label as string)
     : [...Array(48)].map(() => (~~(Math.random() * 36)).toString(36)).join("");
-  console.log(devices);
   // get linode instance info from database
   db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
     if (err) {
@@ -182,6 +181,67 @@ router.get("/:configId", (req, res) => {
 });
 
 // Configuration Profile Update
-router.put("/:configId", (req, res) => {});
+// implemenet comments, devices, label
+// ignore helpers, interfaces, kernel, memory_limit, root_device, run_level, virt_mode
+router.put("/:configId", (req, res) => {
+  let linode_id = (req.params as any).linodeId;
+  let config_id = req.params.configId as string;
+  let comments = req.headers.comments;
+  let devices = req.headers.devices;
+  let label = req.headers.label;
+  if (devices) {
+    try {
+      devices = JSON.parse(req.headers.devices as string);
+    } catch {
+      return res
+        .status(500)
+        .json({ errors: [{ reason: "Invalid devices JSON." }] });
+    }
+  }
+  // get linode instance info from database
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({ errors: [{ reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ reason: "linode_id does not exist" }],
+      });
+    }
+    // get the config list and the index of this one
+    let configs_list: any[] = JSON.parse(row["configs"]);
+    let config_index = configs_list.findIndex((el) => {
+      return el["id"] == config_id;
+    });
+    // update data in config
+    let config_json = configs_list[config_index];
+    if (comments) {
+      config_json["comments"] = comments;
+    }
+    if (devices) {
+      config_json["devices"] = devices;
+    }
+    if (label) {
+      config_json["label"] = label;
+    }
+    configs_list[config_index] = config_json;
+
+    // update sql
+    db.run(
+      `UPDATE instances SET configs = '${JSON.stringify(
+        configs_list
+      )}' WHERE id='${linode_id}'`,
+      (err) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linode_id", reason: err }] });
+        }
+        // return successfully
+        return res.json(config_json);
+      }
+    );
+  });
+});
 
 export default router;
