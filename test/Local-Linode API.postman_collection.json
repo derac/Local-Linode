@@ -1,0 +1,843 @@
+{
+	"info": {
+		"_postman_id": "593b2cbf-32d4-424d-a68b-eaf8e4fec25a",
+		"name": "Local-Linode API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Volumes",
+			"item": [
+				{
+					"name": "Volume Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "tags",
+								"value": "[\"b\",\"a\",\"c\"]",
+								"type": "text"
+							},
+							{
+								"key": "label",
+								"value": "abcde",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/de156ea4-7cac-4fa0-a8d8-159a67ad9ebc",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"de156ea4-7cac-4fa0-a8d8-159a67ad9ebc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume Resize",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "size",
+								"value": "20",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/3a8e8a2c-f71f-4711-8b17-3cb8d7a28acd/resize",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"3a8e8a2c-f71f-4711-8b17-3cb8d7a28acd",
+								"resize"
+							],
+							"query": [
+								{
+									"key": "size",
+									"value": "50",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume View",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/b5laiseg3hzr9j9fnca9cq5itieoxp7x",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"b5laiseg3hzr9j9fnca9cq5itieoxp7x"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/a1720512-c090-43a6-812b-ddd25ad9e965",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"a1720512-c090-43a6-812b-ddd25ad9e965"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "size",
+								"value": "20",
+								"type": "text"
+							},
+							{
+								"key": "label",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume Detach",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/7d544297-e284-4b92-89f0-efa54ae15dc0/detach",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"7d544297-e284-4b92-89f0-efa54ae15dc0",
+								"detach"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Volume Attach",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "linode_id",
+								"value": "gxyclanaw9rmn8axmo0viksn7lhkwi34",
+								"type": "text"
+							},
+							{
+								"key": "persist_across_boots",
+								"value": "false",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/volumes/7d544297-e284-4b92-89f0-efa54ae15dc0/attach",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"volumes",
+								"7d544297-e284-4b92-89f0-efa54ae15dc0",
+								"attach"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Types",
+			"item": [
+				{
+					"name": "Type View",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/types/g6-nanode-1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"types",
+								"g6-nanode-1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Types List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/types",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"types"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Instances",
+			"item": [
+				{
+					"name": "Disks",
+					"item": [
+						{
+							"name": "Disks View",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/disks/1635546d-7881-4496-a87c-b94cab41b48c",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"disks",
+										"1635546d-7881-4496-a87c-b94cab41b48c"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Disks List",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/3dxv5b1sbmu43sgydoiyrqy65c09lajl/disks/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"3dxv5b1sbmu43sgydoiyrqy65c09lajl",
+										"disks",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Disk Create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "size",
+										"value": "21",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/gxyclanaw9rmn8axmo0viksn7lhkwi34/disks/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"gxyclanaw9rmn8axmo0viksn7lhkwi34",
+										"disks",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Disk Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/gxyclanaw9rmn8axmo0viksn7lhkwi34/disks/3d0f992c-6892-424c-b32e-67d9bf9020b6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"gxyclanaw9rmn8axmo0viksn7lhkwi34",
+										"disks",
+										"3d0f992c-6892-424c-b32e-67d9bf9020b6"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Configs",
+					"item": [
+						{
+							"name": "Configs View",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/72jo2lskvtv5fz5g23oj1sj73x01fh65",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"configs",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Configs List",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"configs",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Config Create",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"configs",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Config Delete",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/configId",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"configs",
+										"configId"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Config Update",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/configId",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3000",
+									"path": [
+										"v4",
+										"linode",
+										"instances",
+										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"configs",
+										"configId"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Linode Create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "label",
+								"value": "testlabel2",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "region",
+								"value": "us-east",
+								"type": "text"
+							},
+							{
+								"key": "type",
+								"value": "g6-standard-1",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Remove",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/3dxv5b1sbmu43sgydoiyrqy65c09lajl",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"3dxv5b1sbmu43sgydoiyrqy65c09lajl"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linodes List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode View",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"72jo2lskvtv5fz5g23oj1sj73x01fh65"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "label",
+								"value": "test-label",
+								"type": "text"
+							},
+							{
+								"key": "tags",
+								"value": "[\"c\",\"b\",\"a\"]",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/7aa1d608d37291ceaa3b01c6a4177ab2d16eb6062e0e74cfb9178f92d2ac72fc",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"7aa1d608d37291ceaa3b01c6a4177ab2d16eb6062e0e74cfb9178f92d2ac72fc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Shut Down",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/gxyclanaw9rmn8axmo0viksn7lhkwi34/shutdown",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"gxyclanaw9rmn8axmo0viksn7lhkwi34",
+								"shutdown"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Boot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/mfzaoj8tgqbppnv3mmqvk5ocu4xpuxkr/boot",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"mfzaoj8tgqbppnv3mmqvk5ocu4xpuxkr",
+								"boot"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Reboot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/mfzaoj8tgqbppnv3mmqvk5ocu4xpuxkr/reboot",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"mfzaoj8tgqbppnv3mmqvk5ocu4xpuxkr",
+								"reboot"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "IP Address View",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/ro1backju0ns2tngzre1vtyqrcrqsq2s/ips/192.168.56.101",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"ro1backju0ns2tngzre1vtyqrcrqsq2s",
+								"ips",
+								"192.168.56.101"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Resize",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "type",
+								"value": "g6-standard-24",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/37faba15c8f4050acbb60c87f1f5ec94529f756b3bb060bf5e516d86f63b8ab1/resize",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"37faba15c8f4050acbb60c87f1f5ec94529f756b3bb060bf5e516d86f63b8ab1",
+								"resize"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode Root Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/37faba15c8f4050acbb60c87f1f5ec94529f756b3bb060bf5e516d86f63b8ab1/password",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"37faba15c8f4050acbb60c87f1f5ec94529f756b3bb060bf5e516d86f63b8ab1",
+								"password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Linode's Volumes List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v4/linode/instances/z6x0d2iqnboos9w8iret9wf1i2385oaz/volumes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v4",
+								"linode",
+								"instances",
+								"z6x0d2iqnboos9w8iret9wf1i2385oaz",
+								"volumes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
