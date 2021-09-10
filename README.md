@@ -69,7 +69,7 @@ sudo ufw enable
 ## Postman collection for testing
 <a href="/test/Local-Linode API.postman_collection.json">Postman collection json file.</a>
 <br />
-<img src="https://user-images.githubusercontent.com/6697473/132897366-d2badc03-c42f-495f-8de4-e6ea844bb633.png" width="200px" />
+<img src="https://user-images.githubusercontent.com/6697473/132905188-759bc534-0529-4f3b-b18e-92ac8bc29ff4.png" width="250px" />
 
 ## TODO
 
