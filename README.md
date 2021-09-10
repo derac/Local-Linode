@@ -78,13 +78,12 @@ sudo ufw enable
 
 ## TODO
 
-- formatting disk as ext4 on creation
+- Disk Create - format disk as ext4
 - config booting
   - Linode Delete - cycle through all associated disks and delete them
-  - On setting config, pack drives to the front of the config and save before loading drives.
-  - Linode Reboot - Boot from config
+  - Linode Boot and Reboot - Boot from config, on loading config, move all drives to fill front slots sba->sbh and save config
 - password
-  - Require a pass when using linode create
+  - Linode Create - require a pass and set it - need to add field to instance sql
   - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - resizing disks and volumes
 - Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
