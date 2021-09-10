@@ -151,18 +151,16 @@ router.post("/", (req, res) => {
             virtualbox.vboxmanage(
               [
                 "guestcontrol",
-                linode_id,
-                "run",
-                "/bin/sh",
+                "f06xh9gqtyo6nxr342svzenw4ulysfv1",
                 "--username",
                 "local-linode",
                 "--password",
                 "local-linode",
-                "-- -c '",
-                "echo local-linode | sudo -S",
-                // this is the command we are running, can use ; and such - remember it's nested in double and single quotes
-                "fdisk -l",
-                "'",
+                "run",
+                "/bin/sh",
+                "--",
+                "-c",
+                "/bin/ls -l",
               ],
               (err: Error, stdout: string) => {
                 if (err) {
