@@ -668,9 +668,20 @@
 									]
 								},
 								"method": "PUT",
-								"header": [],
+								"header": [
+									{
+										"key": "devices",
+										"value": "{\"sda\":{\"disk_id\":\"1\",\"volume_id\":null},\"sdb\":{\"disk_id\":null,\"volume_id\":\"6\"}}",
+										"type": "text"
+									},
+									{
+										"key": "label",
+										"value": "newlabel",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "http://localhost:3000/v4/linode/instances/72jo2lskvtv5fz5g23oj1sj73x01fh65/configs/configId",
+									"raw": "http://localhost:3000/v4/linode/instances/f06xh9gqtyo6nxr342svzenw4ulysfv1/configs/9zezae077oadj6lxaa9dh5xxhzgq5gs8ijxx2q4wgyjaz6sk",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -680,9 +691,9 @@
 										"v4",
 										"linode",
 										"instances",
-										"72jo2lskvtv5fz5g23oj1sj73x01fh65",
+										"f06xh9gqtyo6nxr342svzenw4ulysfv1",
 										"configs",
-										"configId"
+										"9zezae077oadj6lxaa9dh5xxhzgq5gs8ijxx2q4wgyjaz6sk"
 									]
 								}
 							},
