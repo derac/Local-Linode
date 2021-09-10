@@ -67,8 +67,9 @@ sudo ufw enable
   - this is what node-virtualbox uses under the hood to control virtualbox
 
 ## Postman collection for testing
-[test/Local-Linode API.postman_collection.json](Postman collection json file.)
-![image](https://user-images.githubusercontent.com/6697473/132897366-d2badc03-c42f-495f-8de4-e6ea844bb633.png)
+<a href="/test/Local-Linode API.postman_collection.json">Postman collection json file.</a>
+<br />
+<img src="https://user-images.githubusercontent.com/6697473/132897366-d2badc03-c42f-495f-8de4-e6ea844bb633.png" width="200px" />
 
 ## TODO
 
