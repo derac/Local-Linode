@@ -67,17 +67,21 @@ sudo ufw enable
   - this is what node-virtualbox uses under the hood to control virtualbox
 
 ## Postman collection for testing
+
 <a href="/test/Local-Linode API.postman_collection.json">Postman collection json file.</a>
 <br />
 <img src="https://user-images.githubusercontent.com/6697473/132905188-759bc534-0529-4f3b-b18e-92ac8bc29ff4.png" width="250px" />
 
+## not implemented
+
+- resizing disks and volumes largely, just create a large volume since it's dynamic in virutalbox. Could ignore resize instead of sending error if desired.
+- many of the options for creating a new instance and config, such as interfaces
+
 ## TODO
 
+- Linode Delete - cycle through all associated disks and delete them
 - On setting config, pack drives to the front of the config and save before loading drives.
 - Linode Reboot - Boot from config
-- Linode Delete - cycle through all associated disks and delete them
 - Require a pass when using linode create
 - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
-- Use disk size variable from type when creating insance, probably won't implement this any time soon
-- Linode Resize - actually resize the disk
 - Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
