@@ -54,6 +54,7 @@ router.post("/", (req, res) => {
         errors: [{ reason: "linode_id does not exist" }],
       });
     }
+    let linode_json = JSON.parse(row["data"]);
     let configs_list: any[] = JSON.parse(row["configs"]);
     // we don't bother to check if it's valid
     // if there is an issue with the config, it will be obvious when booting it
@@ -71,16 +72,29 @@ router.post("/", (req, res) => {
       interfaces: [],
       kernel: "linode/latest-64bit",
       label: label,
-      memory_limit: 2048,
+      memory_limit: linode_json["specs"]["memory"],
       root_device: "/dev/sda",
       run_level: "default",
       virt_mode: "paravirt",
     };
     configs_list.push(config_json);
+    linode_json;
 
     // update sql
-
-    res.json(configs_list);
+    db.run(
+      `UPDATE instances SET configs = '${JSON.stringify(
+        configs_list
+      )}' WHERE id='${linode_id}'`,
+      (err) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linode_id", reason: err }] });
+        }
+        // return successfully
+        return res.json(config_json);
+      }
+    );
   });
 });
 
