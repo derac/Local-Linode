@@ -27,7 +27,28 @@ router.get("/", (req, res) => {
 });
 
 // Configuration Profile Create
-router.post("/", (req, res) => {});
+// implemenet comments, devices, label
+// ignore helpers, interfaces, kernel, memory_limit, root_device, run_level, virt_mode
+router.post("/", (req, res) => {
+  let linode_id = (req.params as any).linodeId;
+  let comments = req.headers.comments ? req.headers.comments : "";
+  let devices = req.headers.devices;
+  console.log(devices);
+  res.json({});
+  // get linode instance info from database
+  db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+    if (err) {
+      return res.status(500).json({ errors: [{ reason: err }] });
+    }
+    if (!row) {
+      return res.status(500).json({
+        errors: [{ reason: "linode_id does not exist" }],
+      });
+    }
+    let disks_list: any[] = JSON.parse(row["disks"]);
+    let configs_list: any[] = JSON.parse(row["configs"]);
+  });
+});
 
 // Configuration Profile Delete
 router.delete("/:configId", (req, res) => {});
