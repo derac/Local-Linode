@@ -148,46 +148,72 @@ router.post("/", (req, res) => {
               disk_uuid;
             linode_json["updated"] = datetime;
             // create partition and format the drive as ext4
-            virtualbox.vboxmanage(
-              [
-                "guestcontrol",
-                "f06xh9gqtyo6nxr342svzenw4ulysfv1",
-                "--username",
-                "local-linode",
-                "--password",
-                "local-linode",
-                "run",
-                "/bin/sh",
-                "--",
-                "-c",
-                "/bin/ls -l",
-              ],
-              (err: Error, stdout: string) => {
-                if (err) {
-                  return res.status(500).json({ errors: [{ reason: err }] });
-                }
-                console.log(stdout);
-                // we need to update disks list, config, and linode data in sqlite
-                db.run(
-                  `UPDATE instances SET data = '${JSON.stringify(
-                    linode_json
-                  )}', configs = '${JSON.stringify(
-                    configs_list
-                  )}', disks = '${JSON.stringify(
-                    disks_list
-                  )}' WHERE id='${linode_id}'`,
-                  (err) => {
-                    if (err) {
-                      return res.status(500).json({
-                        errors: [{ field: "linode_id", reason: err }],
-                      });
-                    }
-                    // return successfully
-                    return res.json(disk_json);
+            // need to wait for storage to actually be attached.
+            // TODO: make this retry for x seconds ever so often rather than waiting for 2s
+            setTimeout(() => {
+              virtualbox.vboxmanage(
+                [
+                  "guestcontrol",
+                  "f06xh9gqtyo6nxr342svzenw4ulysfv1",
+                  "--username",
+                  "local-linode",
+                  "--password",
+                  "local-linode",
+                  "run",
+                  "/bin/sh",
+                  "--",
+                  "-c",
+                  `echo local-linode | sudo -S parted /dev/${hdd_slot} mklabel gpt`,
+                ],
+                (err: Error, stdout: string) => {
+                  if (err) {
+                    return res.status(500).json({ errors: [{ reason: err }] });
                   }
-                );
-              }
-            );
+                  virtualbox.vboxmanage(
+                    [
+                      "guestcontrol",
+                      "f06xh9gqtyo6nxr342svzenw4ulysfv1",
+                      "--username",
+                      "local-linode",
+                      "--password",
+                      "local-linode",
+                      "run",
+                      "/bin/sh",
+                      "--",
+                      "-c",
+                      `echo local-linode | sudo -S parted /dev/${hdd_slot} mkpart primary ext4 0% 100%`,
+                    ],
+                    (err: Error, stdout: string) => {
+                      if (err) {
+                        return res
+                          .status(500)
+                          .json({ errors: [{ reason: err }] });
+                      }
+                      console.log(stdout);
+                      // we need to update disks list, config, and linode data in sqlite
+                      db.run(
+                        `UPDATE instances SET data = '${JSON.stringify(
+                          linode_json
+                        )}', configs = '${JSON.stringify(
+                          configs_list
+                        )}', disks = '${JSON.stringify(
+                          disks_list
+                        )}' WHERE id='${linode_id}'`,
+                        (err) => {
+                          if (err) {
+                            return res.status(500).json({
+                              errors: [{ field: "linode_id", reason: err }],
+                            });
+                          }
+                          // return successfully
+                          return res.json(disk_json);
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            }, 2000);
           }
         );
       }
