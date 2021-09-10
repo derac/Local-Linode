@@ -78,7 +78,6 @@ sudo ufw enable
 
 ## TODO
 
-- Disk Create - format disk as ext4
 - config booting
   - Linode Delete - cycle through all associated disks and delete them
   - Linode Boot and Reboot - Boot from config, on loading config, move all drives to fill front slots sba->sbh and save config
