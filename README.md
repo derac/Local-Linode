@@ -86,4 +86,5 @@ sudo ufw enable
   - Linode Create - require a pass and set it - need to add field to instance sql
   - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - resizing disks and volumes
+  - may not implement this, particularly disks initially
 - Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
