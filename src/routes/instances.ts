@@ -297,8 +297,9 @@ router.delete("/:linodeId", (req, res) => {
               for (let disk_json of disks_list) {
                 virtualbox.vboxmanage(
                   ["closemedium", "disk", disk_json["id"], "--delete"],
-                  (err: Error) => {
-                    console.log(err);
+                  (_err: Error) => {
+                    // seeing error here, but drives are still deleted, needs investigation.
+                    // ignoring for now
                   }
                 );
               }
