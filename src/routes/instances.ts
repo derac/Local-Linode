@@ -294,7 +294,7 @@ router.delete("/:linodeId", (req, res) => {
                 });
               }
               // delete all the disks associated with the vm
-              for (let disk_json of disks_list) {
+              disks_list.forEach((disk_json) => {
                 virtualbox.vboxmanage(
                   ["closemedium", "disk", disk_json["id"], "--delete"],
                   (_err: Error) => {
@@ -302,7 +302,7 @@ router.delete("/:linodeId", (req, res) => {
                     // ignoring for now
                   }
                 );
-              }
+              });
               return res.json({});
             }
           );
@@ -405,6 +405,7 @@ router.put("/:linodeId", (req, res) => {
 
 // Linode Boot
 router.post("/:linodeId/boot", (req, res) => {
+  let config_id = req.headers.config_id as string;
   virtualbox.start(req.params.linodeId, (err: Error) => {
     if (err) {
       return res.status(500).json({
@@ -413,7 +414,7 @@ router.post("/:linodeId/boot", (req, res) => {
       });
     } else {
       db.get(
-        `SELECT data FROM instances WHERE id='${req.params.linodeId}'`,
+        `SELECT * FROM instances WHERE id='${req.params.linodeId}'`,
         (err, row) => {
           if (err) {
             return res
@@ -427,6 +428,33 @@ router.post("/:linodeId/boot", (req, res) => {
               ],
             });
           }
+          // set config id to current config if it wasn't supplied as a header
+          if (!config_id) {
+            config_id = row("current_config");
+          }
+          let configs_list: any[] = JSON.parse(row["configs"]);
+          // get index of config_id in configs_list
+          let config_index = configs_list.findIndex((el) => {
+            return el["id"] == config_id;
+          });
+
+          // fix any gaps in config's disks
+          let device_config: Object = configs_list[config_index]["devices"];
+          let diskvolume_list = [];
+          for (let [k, v] of Object.entries(device_config)) {
+            if (v["disk_id"] != null && v["volume_id"] != null) {
+              diskvolume_list.push(v);
+              (device_config as any)[k] = { disk_id: null, volume_id: null };
+            }
+          }
+          diskvolume_list.map((diskvolume, i) => {
+            let diskname = `sd${String.fromCharCode(i + 97)}`;
+            (device_config as any)[diskname] = diskvolume;
+          });
+          configs_list[config_index]["devices"] = device_config;
+
+          // attach drives in config - need to remove all and attach before starting
+
           let updated_json = JSON.parse(row["data"]);
           updated_json["status"] = "running";
           db.run(
