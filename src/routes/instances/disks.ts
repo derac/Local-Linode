@@ -296,26 +296,36 @@ router.delete("/:diskId", (req, res) => {
             ],
           });
         }
-        // successfully deleted drive
-        // filter disk id out of disks list
-        disks_list = disks_list.filter((el) => {
-          return el["id"] != disk_id;
-        });
-        linode_json["updated"] = datetime;
-        // update disks, configs, and linode data in sql
-        db.run(
-          `UPDATE instances SET data = '${JSON.stringify(
-            linode_json
-          )}', configs = '${JSON.stringify(
-            configs_list
-          )}', disks = '${JSON.stringify(disks_list)}' WHERE id='${linode_id}'`,
-          (err) => {
+        virtualbox.vboxmanage(
+          ["closemedium", "disk", disk_id, "--delete"],
+          (err: Error) => {
             if (err) {
-              return res
-                .status(500)
-                .json({ errors: [{ field: "linode_id", reason: err }] });
+              return res.status(500).json({ errors: [{ reason: err }] });
             }
-            return res.json({});
+            // successfully deleted drive
+            // filter disk id out of disks list
+            disks_list = disks_list.filter((el) => {
+              return el["id"] != disk_id;
+            });
+            linode_json["updated"] = datetime;
+            // update disks, configs, and linode data in sql
+            db.run(
+              `UPDATE instances SET data = '${JSON.stringify(
+                linode_json
+              )}', configs = '${JSON.stringify(
+                configs_list
+              )}', disks = '${JSON.stringify(
+                disks_list
+              )}' WHERE id='${linode_id}'`,
+              (err) => {
+                if (err) {
+                  return res
+                    .status(500)
+                    .json({ errors: [{ field: "linode_id", reason: err }] });
+                }
+                return res.json({});
+              }
+            );
           }
         );
       }
