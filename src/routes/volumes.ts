@@ -357,7 +357,7 @@ router.post("/:volumeId/attach", (req, res) => {
       });
 
       // find the first open slot in the config
-      let device_config: any[] = configs_list[config_index]["devices"];
+      let device_config: Object = configs_list[config_index]["devices"];
       let hdd_slot = "";
 
       for (const [k, v] of Object.entries(device_config)) {
@@ -487,7 +487,7 @@ router.post("/:volumeId/detach", (req, res) => {
       let port_number;
 
       // find the hdd slot this volume is on, exit if it's not on the current config
-      let device_config: any[] = configs_list[config_index]["devices"];
+      let device_config: Object = configs_list[config_index]["devices"];
       for (const [k, v] of Object.entries(device_config)) {
         if (v["volume_id"] == volume_id) {
           port_number = k[2].charCodeAt(0) - 97;

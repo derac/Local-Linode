@@ -80,7 +80,7 @@ router.post("/", (req, res) => {
       });
     }
     // get the hdd slot we will attach to.
-    let device_config: any[] = configs_list[config_index]["devices"];
+    let device_config: Object = configs_list[config_index]["devices"];
     let hdd_slot = "";
     for (const [k, v] of Object.entries(device_config)) {
       if (v["disk_id"] == null && v["volume_id"] == null) {
@@ -256,7 +256,7 @@ router.delete("/:diskId", (req, res) => {
     let port_number;
 
     // find the hdd slot this volume is on, exit if it's not on the current config
-    let device_config: any[] = configs_list[config_index]["devices"];
+    let device_config: Object = configs_list[config_index]["devices"];
     for (const [k, v] of Object.entries(device_config)) {
       if (v["disk_id"] == disk_id) {
         port_number = k[2].charCodeAt(0) - 97;
