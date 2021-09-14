@@ -260,7 +260,7 @@ router.post("/", (req, res) => {
 });
 
 // Gives up any IP addresses the Linode was assigned.
-// Deletes all Disks, Backups, Configs, etc.
+// Deletes all Disks, Configs, etc.
 // Linode Delete
 router.delete("/:linodeId", (req, res) => {
   let label = req.params.linodeId;
@@ -275,6 +275,7 @@ router.delete("/:linodeId", (req, res) => {
         errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
       });
     }
+    let disks_list = JSON.parse(row["disks"]);
     db.run(`DELETE FROM instances WHERE id='${label}'`, (err) => {
       if (err) {
         return res
@@ -284,14 +285,24 @@ router.delete("/:linodeId", (req, res) => {
       virtualbox.poweroff(label, (err: Error | null) => {
         virtualbox.vboxmanage(
           ["unregistervm", label, "--delete"],
-          (err: Error, stdout: string) => {
+          (err: Error, _stdout: string) => {
             if (err) {
               return res.status(500).json({
                 errors: [{ reason: err }],
               });
-            } else {
-              return res.json({});
             }
+            // delete all the disks associated with the vm
+            disks_list.forEach((disk_json: any) => {
+              virtualbox.vboxmanage(
+                ["closemedium", "disk", disk_json["id"], "--delete"],
+                (err: Error) => {
+                  if (err) {
+                    return res.status(500).json({ errors: [{ reason: err }] });
+                  }
+                }
+              );
+            });
+            return res.json({});
           }
         );
       });
