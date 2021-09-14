@@ -261,53 +261,54 @@ router.post("/", (req, res) => {
 
 // Gives up any IP addresses the Linode was assigned.
 // Deletes all Disks, Configs, etc.
-// Linode Delete
+// Linode Remove
 router.delete("/:linodeId", (req, res) => {
   let label = req.params.linodeId;
-  db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ errors: [{ field: "linodeId", reason: err }] });
-    }
-    if (!row) {
-      return res.status(500).json({
-        errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
-      });
-    }
-    let disks_list = JSON.parse(row["disks"]);
-    db.run(`DELETE FROM instances WHERE id='${label}'`, (err) => {
+  db.get(
+    `SELECT data, disks FROM instances WHERE id='${label}'`,
+    (err, row) => {
       if (err) {
         return res
           .status(500)
           .json({ errors: [{ field: "linodeId", reason: err }] });
       }
-      virtualbox.poweroff(label, (err: Error | null) => {
-        virtualbox.vboxmanage(
-          ["unregistervm", label, "--delete"],
-          (err: Error, _stdout: string) => {
-            if (err) {
-              return res.status(500).json({
-                errors: [{ reason: err }],
-              });
-            }
-            // delete all the disks associated with the vm
-            disks_list.forEach((disk_json: any) => {
-              virtualbox.vboxmanage(
-                ["closemedium", "disk", disk_json["id"], "--delete"],
-                (err: Error) => {
-                  if (err) {
-                    return res.status(500).json({ errors: [{ reason: err }] });
+      if (!row) {
+        return res.status(500).json({
+          errors: [{ field: "linodeId", reason: "linodeId does not exist." }],
+        });
+      }
+      let disks_list: any[] = JSON.parse(row["disks"]);
+      db.run(`DELETE FROM instances WHERE id='${label}'`, (err) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linodeId", reason: err }] });
+        }
+        virtualbox.poweroff(label, (_err: Error) => {
+          virtualbox.vboxmanage(
+            ["unregistervm", label, "--delete"],
+            (err: Error, _stdout: string) => {
+              if (err) {
+                return res.status(500).json({
+                  errors: [{ reason: err }],
+                });
+              }
+              // delete all the disks associated with the vm
+              for (let disk_json of disks_list) {
+                virtualbox.vboxmanage(
+                  ["closemedium", "disk", disk_json["id"], "--delete"],
+                  (err: Error) => {
+                    console.log(err);
                   }
-                }
-              );
-            });
-            return res.json({});
-          }
-        );
+                );
+              }
+              return res.json({});
+            }
+          );
+        });
       });
-    });
-  });
+    }
+  );
 });
 
 // Linode View

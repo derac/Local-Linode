@@ -87,3 +87,4 @@ sudo ufw enable
   - may not implement this, particularly disks initially
 - Finalize template VM process and add automation of it's creation to the setup script. Add instructions on how to modify the template to the README.
   - Need to figure out how to make hotswappable the default for new drives.
+- improve Disk Create timeout for ext4 partitioning
