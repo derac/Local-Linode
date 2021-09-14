@@ -154,7 +154,7 @@ router.post("/", (req, res) => {
               virtualbox.vboxmanage(
                 [
                   "guestcontrol",
-                  "f06xh9gqtyo6nxr342svzenw4ulysfv1",
+                  linode_id,
                   "--username",
                   "local-linode",
                   "--password",
@@ -180,7 +180,7 @@ router.post("/", (req, res) => {
                   virtualbox.vboxmanage(
                     [
                       "guestcontrol",
-                      "f06xh9gqtyo6nxr342svzenw4ulysfv1",
+                      linode_id,
                       "--username",
                       "local-linode",
                       "--password",
