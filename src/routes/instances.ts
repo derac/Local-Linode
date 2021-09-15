@@ -428,21 +428,53 @@ router.post("/:linodeId/boot", (req, res) => {
               ],
             });
           }
-          // set config id to current config if it wasn't supplied as a header
+          let current_config = row("current_config");
           if (!config_id) {
-            config_id = row("current_config");
+            // set config id to current config if it wasn't supplied as a header
+            config_id = current_config;
           }
           let configs_list: any[] = JSON.parse(row["configs"]);
           // get index of config_id in configs_list
           let config_index = configs_list.findIndex((el) => {
             return el["id"] == config_id;
           });
-
-          // fix any gaps in config's disks
+          // if we can't find config_id in the configs list, return an error
+          if (!config_index) {
+            return res.status(500).json({
+              errors: [
+                { field: "config_id", reason: "config_id does not exist" },
+              ],
+            });
+          }
+          // remove drives from instance for current config if it isn't what we are booting to
+          if (current_config != config_id) {
+            let prev_config_index = configs_list.findIndex((el) => {
+              return el["id"] == current_config;
+            });
+            let prev_device_config: Object =
+              configs_list[prev_config_index]["devices"];
+            for (let [k, v] of Object.entries(prev_device_config)) {
+              if (v["disk_id"] || v["volume_id"]) {
+                virtualbox.vboxmanage(
+                  [
+                    "closemedium",
+                    "disk",
+                    v["disk_id"] || v["volume_id"],
+                    "--delete",
+                  ],
+                  (err: Error) => {
+                    console.log(err);
+                  }
+                );
+              }
+            }
+          }
+          // fix any gaps in the config we are switching to's disks
+          // (move them to fill sda,sdb,sdc... first)
           let device_config: Object = configs_list[config_index]["devices"];
           let diskvolume_list = [];
           for (let [k, v] of Object.entries(device_config)) {
-            if (v["disk_id"] != null && v["volume_id"] != null) {
+            if (v["disk_id"] || v["volume_id"]) {
               diskvolume_list.push(v);
               (device_config as any)[k] = { disk_id: null, volume_id: null };
             }
@@ -452,14 +484,15 @@ router.post("/:linodeId/boot", (req, res) => {
             (device_config as any)[diskname] = diskvolume;
           });
           configs_list[config_index]["devices"] = device_config;
-
-          // attach drives in config - need to remove all and attach before starting
+          // attach drives in new config
 
           let updated_json = JSON.parse(row["data"]);
           updated_json["status"] = "running";
           db.run(
             `UPDATE instances SET data='${JSON.stringify(
               updated_json
+            )}', current_config='${config_id}', configs='${JSON.stringify(
+              configs_list
             )}' WHERE id='${req.params.linodeId}'`,
             (err) => {
               if (err) {
