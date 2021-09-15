@@ -167,6 +167,27 @@ router.post("/", (req, res) => {
                 ],
                 (err: Error, stdout: string) => {
                   if (err) {
+                    // if there is an error running this command, detach the drive and release the process
+                    // before sending the error message
+                    virtualbox.vboxmanage(
+                      ["startvm", linode_id, "--type", "emergencystop"],
+                      (_err: Error, _stdout: string) => {}
+                    );
+                    virtualbox.vboxmanage(
+                      [
+                        "storageattach",
+                        linode_id,
+                        "--storagectl",
+                        "SATA",
+                        "--medium",
+                        "none",
+                        "--type",
+                        "hdd",
+                        "--port",
+                        port_number,
+                      ],
+                      () => {}
+                    );
                     return res.status(500).json({
                       errors: [
                         {
