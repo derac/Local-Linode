@@ -443,8 +443,20 @@ router.post("/:linodeId/boot", (req, res) => {
     let prev_device_config: Object = configs_list[prev_config_index]["devices"];
     for (let [k, v] of Object.entries(prev_device_config)) {
       if (v["disk_id"] || v["volume_id"]) {
+        let port_number = k[2].charCodeAt(0) - 97;
         virtualbox.vboxmanage(
-          ["closemedium", "disk", v["disk_id"] || v["volume_id"], "--delete"],
+          [
+            "storageattach",
+            linode_id,
+            "--storagectl",
+            "SATA",
+            "--medium",
+            "none",
+            "--type",
+            "hdd",
+            "--port",
+            port_number,
+          ],
           (err: Error) => {
             console.log(err);
           }
