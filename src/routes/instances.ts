@@ -421,12 +421,10 @@ router.post("/:linodeId/boot", (req, res) => {
       });
     }
     let current_config = row["current_config"];
-    // release any processes using this VM
+    // release any processes using this VM as a precaution
     virtualbox.vboxmanage(
       ["startvm", linode_id, "--type", "emergencystop"],
-      (err: Error, _stdout: string) => {
-        console.log(err);
-      }
+      (_err: Error, _stdout: string) => {}
     );
     // set config id to current config if it wasn't supplied as a header
     if (!config_id) {
@@ -465,7 +463,9 @@ router.post("/:linodeId/boot", (req, res) => {
             port_number,
           ],
           (err: Error) => {
-            console.log(err);
+            if (err) {
+              return res.status(500).json({ errors: [{ reason: err }] });
+            }
           }
         );
       }
@@ -505,7 +505,9 @@ router.post("/:linodeId/boot", (req, res) => {
             port_number,
           ],
           (err: Error, _stdout: string) => {
-            console.log(err);
+            if (err) {
+              return res.status(500).json({ errors: [{ reason: err }] });
+            }
           }
         );
       }
@@ -602,42 +604,165 @@ router.post("/:linodeId/shutdown", (req, res) => {
 
 // Linode Reboot
 router.post("/:linodeId/reboot", (req, res) => {
-  let label = req.params.linodeId;
-  db.get(`SELECT data FROM instances WHERE id='${label}'`, (err, row) => {
+  let config_id = req.headers.config_id as string;
+  let linode_id = req.params.linodeId;
+  virtualbox.poweroff(linode_id, (err: Error) => {
     if (err) {
-      return res
-        .status(500)
-        .json({ errors: [{ field: "linodeId", reason: err }] });
-    }
-    if (!row) {
       return res.status(500).json({
-        errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+        field: "linodeId",
+        errors: [{ reason: err }],
       });
-    }
-    virtualbox.reset(label, (err: Error) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ errors: [{ field: "linodeId", reason: err }] });
-      }
-      // for simplicity, only return once machine is fully booted, check IP to find this state
-      setTimeout(() => {
-        (function retry_loop() {
-          setTimeout(() => {
-            virtualbox.guestproperty.get(
-              { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-              (ipv4_address: string) => {
-                if (ipv4_address) {
-                  return res.json({});
-                } else {
-                  retry_loop();
+    } else {
+      db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ errors: [{ field: "linodeId", reason: err }] });
+        }
+        if (!row) {
+          return res.status(500).json({
+            errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
+          });
+        }
+        let current_config = row["current_config"];
+        // release any processes using this VM as a precaution
+        virtualbox.vboxmanage(
+          ["startvm", linode_id, "--type", "emergencystop"],
+          (_err: Error, _stdout: string) => {}
+        );
+        // set config id to current config if it wasn't supplied as a header
+        if (!config_id) {
+          config_id = current_config;
+        }
+        let configs_list: any[] = JSON.parse(row["configs"]);
+        // get index of config_id in configs_list
+        let config_index = configs_list.findIndex((el) => {
+          return el["id"] == config_id;
+        });
+        // if we can't find config_id in the configs list, return an error
+        if (config_index == -1) {
+          return res.status(500).json({
+            errors: [
+              { field: "config_id", reason: "config_id does not exist" },
+            ],
+          });
+        }
+        // remove drives from instance for current config
+        let prev_config_index = configs_list.findIndex((el) => {
+          return el["id"] == current_config;
+        });
+        let prev_device_config: Object =
+          configs_list[prev_config_index]["devices"];
+        for (let [k, v] of Object.entries(prev_device_config)) {
+          if (v["disk_id"] || v["volume_id"]) {
+            let port_number = k[2].charCodeAt(0) - 97;
+            virtualbox.vboxmanage(
+              [
+                "storageattach",
+                linode_id,
+                "--storagectl",
+                "SATA",
+                "--medium",
+                "none",
+                "--type",
+                "hdd",
+                "--port",
+                port_number,
+              ],
+              (err: Error) => {
+                if (err) {
+                  return res.status(500).json({ errors: [{ reason: err }] });
                 }
               }
             );
-          }, 100);
-        })();
-      }, 100);
-    });
+          }
+        }
+        // fix any gaps in the config we are switching to's disks
+        // (move them to fill sda,sdb,sdc... first)
+        let device_config: Object = configs_list[config_index]["devices"];
+        let diskvolume_list = [];
+        for (let [k, v] of Object.entries(device_config)) {
+          if (v["disk_id"] || v["volume_id"]) {
+            diskvolume_list.push(v);
+            (device_config as any)[k] = { disk_id: null, volume_id: null };
+          }
+        }
+        diskvolume_list.map((diskvolume, i) => {
+          let diskname = `sd${String.fromCharCode(i + 97)}`;
+          (device_config as any)[diskname] = diskvolume;
+        });
+        configs_list[config_index]["devices"] = device_config;
+        // attach drives in new config
+        for (let [k, v] of Object.entries(device_config)) {
+          if (v["disk_id"] || v["volume_id"]) {
+            let port_number = k[2].charCodeAt(0) - 97;
+            virtualbox.vboxmanage(
+              [
+                "storageattach",
+                linode_id,
+                "--storagectl",
+                "SATA",
+                // "--hotpluggable",
+                // "on",
+                "--medium",
+                v["disk_id"] || v["volume_id"],
+                "--type",
+                "hdd",
+                "--port",
+                port_number,
+              ],
+              (err: Error, _stdout: string) => {
+                if (err) {
+                  return res.status(500).json({ errors: [{ reason: err }] });
+                }
+              }
+            );
+          }
+        }
+
+        // start linode and update database, wait until fully booted to send result
+        setTimeout(() => {
+          virtualbox.start(linode_id, (err: Error) => {
+            if (err) {
+              return res.status(500).json({ errors: [{ reason: err }] });
+            }
+            (function retry_loop() {
+              setTimeout(() => {
+                virtualbox.guestproperty.get(
+                  { vm: linode_id, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
+                  (ipv4_address: string) => {
+                    if (ipv4_address) {
+                      // update any other database variables
+                      let updated_json = JSON.parse(row["data"]);
+                      updated_json["status"] = "running";
+                      // update database
+                      db.run(
+                        `UPDATE instances SET data='${JSON.stringify(
+                          updated_json
+                        )}', current_config='${config_id}', configs='${JSON.stringify(
+                          configs_list
+                        )}' WHERE id='${linode_id}'`,
+                        (err) => {
+                          if (err) {
+                            return res.status(500).json({
+                              errors: [{ field: "linodeId", reason: err }],
+                            });
+                          }
+                          // done
+                          return res.json({});
+                        }
+                      );
+                    } else {
+                      retry_loop();
+                    }
+                  }
+                );
+              }, 100);
+            })();
+          });
+        }, 1000);
+      });
+    }
   });
 });
 
