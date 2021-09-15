@@ -136,7 +136,9 @@ router.post("/", (req, res) => {
                       let disk_uuid = stdout
                         .split("\n")
                         .find((line) => {
-                          return line.split("=")[0] == "UUID";
+                          return line
+                            .split("=")[0]
+                            .includes("SATA-ImageUUID-0-0");
                         })
                         ?.split("=")[1]
                         .trim()
@@ -187,7 +189,7 @@ router.post("/", (req, res) => {
                           "This is the default config for this instance.",
                         devices: {
                           sda: {
-                            disk_id: label,
+                            disk_id: disk_uuid,
                             volume_id: null,
                           },
                           sdb: {
@@ -434,22 +436,19 @@ router.post("/:linodeId/boot", (req, res) => {
         errors: [{ field: "config_id", reason: "config_id does not exist" }],
       });
     }
-    // remove drives from instance for current config if it isn't what we are booting to
-    if (current_config != config_id) {
-      let prev_config_index = configs_list.findIndex((el) => {
-        return el["id"] == current_config;
-      });
-      let prev_device_config: Object =
-        configs_list[prev_config_index]["devices"];
-      for (let [k, v] of Object.entries(prev_device_config)) {
-        if (v["disk_id"] || v["volume_id"]) {
-          virtualbox.vboxmanage(
-            ["closemedium", "disk", v["disk_id"] || v["volume_id"], "--delete"],
-            (err: Error) => {
-              console.log(err);
-            }
-          );
-        }
+    // remove drives from instance for current config
+    let prev_config_index = configs_list.findIndex((el) => {
+      return el["id"] == current_config;
+    });
+    let prev_device_config: Object = configs_list[prev_config_index]["devices"];
+    for (let [k, v] of Object.entries(prev_device_config)) {
+      if (v["disk_id"] || v["volume_id"]) {
+        virtualbox.vboxmanage(
+          ["closemedium", "disk", v["disk_id"] || v["volume_id"], "--delete"],
+          (err: Error) => {
+            console.log(err);
+          }
+        );
       }
     }
     // fix any gaps in the config we are switching to's disks
@@ -527,7 +526,7 @@ router.post("/:linodeId/boot", (req, res) => {
 
 // Linode Shut Down
 router.post("/:linodeId/shutdown", (req, res) => {
-  virtualbox.stop(req.params.linodeId, (err: Error) => {
+  virtualbox.acpipowerbutton(req.params.linodeId, (err: Error) => {
     if (err) {
       return res.status(500).json({
         field: "linodeId",
