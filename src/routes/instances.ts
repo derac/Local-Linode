@@ -421,6 +421,13 @@ router.post("/:linodeId/boot", (req, res) => {
       });
     }
     let current_config = row["current_config"];
+    // release any processes using this VM
+    virtualbox.vboxmanage(
+      ["startvm", linode_id, "--type", "emergencystop"],
+      (err: Error, _stdout: string) => {
+        console.log(err);
+      }
+    );
     // set config id to current config if it wasn't supplied as a header
     if (!config_id) {
       config_id = current_config;
@@ -488,8 +495,8 @@ router.post("/:linodeId/boot", (req, res) => {
             linode_id,
             "--storagectl",
             "SATA",
-            "--hotpluggable",
-            "on",
+            // "--hotpluggable",
+            // "on",
             "--medium",
             v["disk_id"] || v["volume_id"],
             "--type",
@@ -504,41 +511,53 @@ router.post("/:linodeId/boot", (req, res) => {
       }
     }
 
-    // update any other database variables
-    let updated_json = JSON.parse(row["data"]);
-    updated_json["status"] = "running";
-
-    // start linode and update database
-    virtualbox.start(req.params.linodeId, (err: Error) => {
-      if (err) {
-        return res.status(500).json({
-          field: "linodeId",
-          errors: [{ reason: err }],
-        });
-      } else {
-        db.run(
-          `UPDATE instances SET data='${JSON.stringify(
-            updated_json
-          )}', current_config='${config_id}', configs='${JSON.stringify(
-            configs_list
-          )}' WHERE id='${req.params.linodeId}'`,
-          (err) => {
-            if (err) {
-              return res
-                .status(500)
-                .json({ errors: [{ field: "linodeId", reason: err }] });
-            }
-            return res.json({});
-          }
-        );
-      }
-    });
+    // start linode and update database, wait until fully booted to send result
+    setTimeout(() => {
+      virtualbox.start(linode_id, (err: Error) => {
+        if (err) {
+          return res.status(500).json({ errors: [{ reason: err }] });
+        }
+        (function retry_loop() {
+          setTimeout(() => {
+            virtualbox.guestproperty.get(
+              { vm: linode_id, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
+              (ipv4_address: string) => {
+                if (ipv4_address) {
+                  // update any other database variables
+                  let updated_json = JSON.parse(row["data"]);
+                  updated_json["status"] = "running";
+                  // update database
+                  db.run(
+                    `UPDATE instances SET data='${JSON.stringify(
+                      updated_json
+                    )}', current_config='${config_id}', configs='${JSON.stringify(
+                      configs_list
+                    )}' WHERE id='${linode_id}'`,
+                    (err) => {
+                      if (err) {
+                        return res.status(500).json({
+                          errors: [{ field: "linodeId", reason: err }],
+                        });
+                      }
+                      // done
+                      return res.json({});
+                    }
+                  );
+                } else {
+                  retry_loop();
+                }
+              }
+            );
+          }, 100);
+        })();
+      });
+    }, 1000);
   });
 });
 
 // Linode Shut Down
 router.post("/:linodeId/shutdown", (req, res) => {
-  virtualbox.acpipowerbutton(req.params.linodeId, (err: Error) => {
+  virtualbox.poweroff(req.params.linodeId, (err: Error) => {
     if (err) {
       return res.status(500).json({
         field: "linodeId",
