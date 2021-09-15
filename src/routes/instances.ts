@@ -418,9 +418,9 @@ router.post("/:linodeId/boot", (req, res) => {
         errors: [{ field: "linodeId", reason: "linodeId does not exist" }],
       });
     }
-    let current_config = row("current_config");
+    let current_config = row["current_config"];
+    // set config id to current config if it wasn't supplied as a header
     if (!config_id) {
-      // set config id to current config if it wasn't supplied as a header
       config_id = current_config;
     }
     let configs_list: any[] = JSON.parse(row["configs"]);
@@ -429,7 +429,7 @@ router.post("/:linodeId/boot", (req, res) => {
       return el["id"] == config_id;
     });
     // if we can't find config_id in the configs list, return an error
-    if (!config_index) {
+    if (config_index == -1) {
       return res.status(500).json({
         errors: [{ field: "config_id", reason: "config_id does not exist" }],
       });
@@ -477,6 +477,8 @@ router.post("/:linodeId/boot", (req, res) => {
             linode_id,
             "--storagectl",
             "SATA",
+            "--hotpluggable",
+            "on",
             "--medium",
             v["disk_id"] || v["volume_id"],
             "--type",
