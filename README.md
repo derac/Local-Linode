@@ -78,8 +78,6 @@ sudo ufw enable
 
 ## TODO
 
-- config booting
-  - Add code from linode boot for config management to linode reboot
 - password
   - Linode Create - require a pass and set it - need to add field to instance sql
   - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
