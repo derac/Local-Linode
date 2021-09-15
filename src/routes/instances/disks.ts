@@ -171,32 +171,34 @@ router.post("/", (req, res) => {
                     // before sending the error message
                     virtualbox.vboxmanage(
                       ["startvm", linode_id, "--type", "emergencystop"],
-                      (_err: Error, _stdout: string) => {}
+                      () => {
+                        virtualbox.vboxmanage(
+                          [
+                            "storageattach",
+                            linode_id,
+                            "--storagectl",
+                            "SATA",
+                            "--medium",
+                            "none",
+                            "--type",
+                            "hdd",
+                            "--port",
+                            port_number,
+                          ],
+                          () => {
+                            return res.status(500).json({
+                              errors: [
+                                {
+                                  message:
+                                    "If you're seeing this error, it may be because the drive hasn't been created yet. Need to improve code for checking this. For now there is a simple wait.",
+                                  reason: err,
+                                },
+                              ],
+                            });
+                          }
+                        );
+                      }
                     );
-                    virtualbox.vboxmanage(
-                      [
-                        "storageattach",
-                        linode_id,
-                        "--storagectl",
-                        "SATA",
-                        "--medium",
-                        "none",
-                        "--type",
-                        "hdd",
-                        "--port",
-                        port_number,
-                      ],
-                      () => {}
-                    );
-                    return res.status(500).json({
-                      errors: [
-                        {
-                          message:
-                            "If you're seeing this error, it may be because the drive hasn't been created yet. Need to improve code for checking this. For now there is a simple wait.",
-                          reason: err,
-                        },
-                      ],
-                    });
                   }
                   virtualbox.vboxmanage(
                     [
