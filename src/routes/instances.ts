@@ -53,8 +53,16 @@ router.post("/", (req, res) => {
     });
   }
 
-  // check type header for validity
+  // require root pass
+  if (!req.headers.root_pass) {
+    return res.status(500).json({
+      errors: [{ field: "type", reason: "root_pass is a required header." }],
+    });
+  }
+  let root_pass = req.headers.root_pass as string;
+
   if (!req.headers.type) {
+    // check type header for validity
     return res.status(500).json({
       errors: [{ field: "type", reason: "type is a required header." }],
     });
@@ -129,6 +137,34 @@ router.post("/", (req, res) => {
               { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
               (ipv4_address: string) => {
                 if (ipv4_address) {
+                  // set root password on machine
+                  virtualbox.vboxmanage(
+                    [
+                      "guestcontrol",
+                      label,
+                      "--username",
+                      "local-linode",
+                      "--password",
+                      "local-linode",
+                      "run",
+                      "/bin/sh",
+                      "--",
+                      "-c",
+                      `echo local-linode | sudo -S echo asd`,
+                    ],
+                    (err: Error, _stdout: string) => {
+                      if (err) {
+                        return res.status(500).json({
+                          errors: [
+                            {
+                              reason: `Unable to set root password on VM.\n${err}`,
+                            },
+                          ],
+                        });
+                      }
+                    }
+                  );
+                  // get machine info and set sql data
                   virtualbox.vboxmanage(
                     ["showvminfo", "--machinereadable", label],
                     (err: Error, stdout: string) => {

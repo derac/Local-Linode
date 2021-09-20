@@ -72,14 +72,14 @@ sudo ufw enable
 <br />
 <img src="https://user-images.githubusercontent.com/6697473/132905188-759bc534-0529-4f3b-b18e-92ac8bc29ff4.png" width="250px" />
 
-## not implemented
+## implementation details
 
-- many of the options for creating a new instance and config, such as interfaces
+- many of the options for creating a new instance and config are not implemented, such as interfaces
+- root_pass sets the password for `root`
 
 ## TODO
 
 - password
-  - Linode Create - require a pass and set it - need to add field to instance sql
   - Linode Password Reset - Linode requires the machine to be shut down to change the pass. This is contrary to what must be the case with virtualbox. need to turn it on, change pass and turn it back off I suppose.
 - resizing disks and volumes
   - may not implement this, particularly disks initially
