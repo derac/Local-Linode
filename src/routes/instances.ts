@@ -967,6 +967,42 @@ router.get("/:linodeId/volumes", (req, res) => {
 // Linode Root Password Reset
 router.post("/:linodeId/password", (req, res) => {
   let linode_id = req.params.linodeId;
+
+  // require root pass
+  if (!req.headers.root_pass) {
+    return res.status(500).json({
+      errors: [{ field: "type", reason: "root_pass is a required header." }],
+    });
+  }
+  let root_pass = req.headers.root_pass as string;
+
+  virtualbox.vboxmanage(
+    [
+      "guestcontrol",
+      linode_id,
+      "--username",
+      "local-linode",
+      "--password",
+      "local-linode",
+      "run",
+      "/bin/sh",
+      "--",
+      "-c",
+      `echo local-linode | sudo -S /bin/sh -c 'echo root:${root_pass} | sudo -S /usr/sbin/chpasswd'`,
+    ],
+    (err: Error, _stdout: string) => {
+      if (err) {
+        return res.status(500).json({
+          errors: [
+            {
+              reason: `Unable to set root password on VM.\n${err}`,
+            },
+          ],
+        });
+      }
+      return res.json({});
+    }
+  );
 });
 
 // ===== not implemented =====
