@@ -150,7 +150,7 @@ router.post("/", (req, res) => {
                       "/bin/sh",
                       "--",
                       "-c",
-                      `echo local-linode | sudo -S echo asd`,
+                      `echo local-linode | sudo -S /bin/sh -c 'echo root:${root_pass} | sudo -S /usr/sbin/chpasswd'`,
                     ],
                     (err: Error, _stdout: string) => {
                       if (err) {
@@ -162,127 +162,128 @@ router.post("/", (req, res) => {
                           ],
                         });
                       }
-                    }
-                  );
-                  // get machine info and set sql data
-                  virtualbox.vboxmanage(
-                    ["showvminfo", "--machinereadable", label],
-                    (err: Error, stdout: string) => {
-                      // get disk uuid from kv output of showvminfo
-                      let disk_uuid = stdout
-                        .split("\n")
-                        .find((line) => {
-                          return line
-                            .split("=")[0]
-                            .includes("SATA-ImageUUID-0-0");
-                        })
-                        ?.split("=")[1]
-                        .trim()
-                        .replace(/['"]+/g, "");
-                      let res_json = {
-                        alerts: {
-                          cpu: 180,
-                          io: 10000,
-                          network_in: 10,
-                          network_out: 10,
-                          transfer_quota: 80,
-                        },
-                        backups: {
-                          enabled: false,
-                        },
-                        created: datetime,
-                        group: "Linode-Group",
-                        hypervisor: "kvm",
-                        id: label,
-                        image: "linode/ubuntu20.04",
-                        ipv4: ipv4_address,
-                        ipv6: "",
-                        label: label,
-                        region: req.headers.region,
-                        specs: {
-                          disk: typeData[0].disk,
-                          memory: typeData[0].memory,
-                          transfer: typeData[0].transfer,
-                          vcpus: typeData[0].vcpus,
-                        },
-                        status: "running",
-                        tags: tags,
-                        type: req.headers.type,
-                        updated: datetime,
-                        watchdog_enabled: true,
-                      };
-                      let default_disk_json = {
-                        created: datetime,
-                        filesystem: "ext4",
-                        id: disk_uuid,
-                        label: "default",
-                        size: typeData[0].disk,
-                        status: "ready",
-                        updated: datetime,
-                      };
-                      let default_config_json = {
-                        comments:
-                          "This is the default config for this instance.",
-                        devices: {
-                          sda: {
-                            disk_id: disk_uuid,
-                            volume_id: null,
-                          },
-                          sdb: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sdc: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sdd: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sde: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sdf: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sdg: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                          sdh: {
-                            disk_id: null,
-                            volume_id: null,
-                          },
-                        },
-                        helpers: {
-                          devtmpfs_automount: false,
-                          distro: false,
-                          modules_dep: false,
-                          network: true,
-                          updatedb_disabled: true,
-                        },
-                        id: label,
-                        interfaces: [], // An empty interfaces array results in a default public interface configuration only.
-                        kernel: "linode/latest-64bit",
-                        label: "default",
-                        memory_limit: typeData[0].memory,
-                        root_device: "/dev/sda",
-                        run_level: "default",
-                        virt_mode: "paravirt",
-                      };
-                      db.run(
-                        `INSERT INTO instances ( id, data, disks, configs, current_config ) VALUES ('${label}','${JSON.stringify(
-                          res_json
-                        )}','[${JSON.stringify(
-                          default_disk_json
-                        )}]','[${JSON.stringify(
-                          default_config_json
-                        )}]','${label}')`
+
+                      // get machine info and set sql data
+                      virtualbox.vboxmanage(
+                        ["showvminfo", "--machinereadable", label],
+                        (err: Error, stdout: string) => {
+                          // get disk uuid from kv output of showvminfo
+                          let disk_uuid = stdout
+                            .split("\n")
+                            .find((line) => {
+                              return line
+                                .split("=")[0]
+                                .includes("SATA-ImageUUID-0-0");
+                            })
+                            ?.split("=")[1]
+                            .trim()
+                            .replace(/['"]+/g, "");
+                          let res_json = {
+                            alerts: {
+                              cpu: 180,
+                              io: 10000,
+                              network_in: 10,
+                              network_out: 10,
+                              transfer_quota: 80,
+                            },
+                            backups: {
+                              enabled: false,
+                            },
+                            created: datetime,
+                            group: "Linode-Group",
+                            hypervisor: "kvm",
+                            id: label,
+                            image: "linode/ubuntu20.04",
+                            ipv4: ipv4_address,
+                            ipv6: "",
+                            label: label,
+                            region: req.headers.region,
+                            specs: {
+                              disk: typeData[0].disk,
+                              memory: typeData[0].memory,
+                              transfer: typeData[0].transfer,
+                              vcpus: typeData[0].vcpus,
+                            },
+                            status: "running",
+                            tags: tags,
+                            type: req.headers.type,
+                            updated: datetime,
+                            watchdog_enabled: true,
+                          };
+                          let default_disk_json = {
+                            created: datetime,
+                            filesystem: "ext4",
+                            id: disk_uuid,
+                            label: "default",
+                            size: typeData[0].disk,
+                            status: "ready",
+                            updated: datetime,
+                          };
+                          let default_config_json = {
+                            comments:
+                              "This is the default config for this instance.",
+                            devices: {
+                              sda: {
+                                disk_id: disk_uuid,
+                                volume_id: null,
+                              },
+                              sdb: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sdc: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sdd: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sde: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sdf: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sdg: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                              sdh: {
+                                disk_id: null,
+                                volume_id: null,
+                              },
+                            },
+                            helpers: {
+                              devtmpfs_automount: false,
+                              distro: false,
+                              modules_dep: false,
+                              network: true,
+                              updatedb_disabled: true,
+                            },
+                            id: label,
+                            interfaces: [], // An empty interfaces array results in a default public interface configuration only.
+                            kernel: "linode/latest-64bit",
+                            label: "default",
+                            memory_limit: typeData[0].memory,
+                            root_device: "/dev/sda",
+                            run_level: "default",
+                            virt_mode: "paravirt",
+                          };
+                          db.run(
+                            `INSERT INTO instances ( id, data, disks, configs, current_config ) VALUES ('${label}','${JSON.stringify(
+                              res_json
+                            )}','[${JSON.stringify(
+                              default_disk_json
+                            )}]','[${JSON.stringify(
+                              default_config_json
+                            )}]','${label}')`
+                          );
+                          return res.json(res_json);
+                        }
                       );
-                      return res.json(res_json);
                     }
                   );
                 } else {
@@ -964,7 +965,9 @@ router.get("/:linodeId/volumes", (req, res) => {
 });
 
 // Linode Root Password Reset
-router.post("/:linodeId/password", (req, res) => {});
+router.post("/:linodeId/password", (req, res) => {
+  let linode_id = req.params.linodeId;
+});
 
 // ===== not implemented =====
 
