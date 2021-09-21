@@ -731,6 +731,11 @@
 								"key": "type",
 								"value": "g6-standard-1",
 								"type": "text"
+							},
+							{
+								"key": "root_pass",
+								"value": "rootpass",
+								"type": "text"
 							}
 						],
 						"url": {
