@@ -11,6 +11,22 @@ import { db } from "../setup/sqlite3_db";
 
 const router = express.Router();
 
+// helper functions
+function sleep(milliseconds: number) {
+  const date = Date.now();
+  let currentDate = null;
+  do {
+    currentDate = Date.now();
+  } while (currentDate - date < milliseconds);
+}
+
+const unlock_vm = (linode_id: string) => {
+  virtualbox.vboxmanage(
+    ["startvm", linode_id, "--type", "emergencystop"],
+    (_err: Error, _stdout: string) => {}
+  );
+};
+
 // ===== Linode Instances API =====
 // /v4/linode/instances
 
@@ -132,166 +148,165 @@ router.post("/", (req, res) => {
         }
         // Retry getting the IP, will only work when machine is fully up.
         (function retry_loop() {
-          setTimeout(() => {
-            virtualbox.guestproperty.get(
-              { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-              (ipv4_address: string) => {
-                if (ipv4_address) {
-                  // set root password on machine
-                  virtualbox.vboxmanage(
-                    [
-                      "guestcontrol",
-                      label,
-                      "--username",
-                      "local-linode",
-                      "--password",
-                      "local-linode",
-                      "run",
-                      "/bin/sh",
-                      "--",
-                      "-c",
-                      `echo local-linode | sudo -S /bin/sh -c 'echo root:${root_pass} | sudo -S /usr/sbin/chpasswd'`,
-                    ],
-                    (err: Error, _stdout: string) => {
-                      if (err) {
-                        return res.status(500).json({
-                          errors: [
-                            {
-                              reason: `Unable to set root password on VM.\n${err}`,
-                            },
-                          ],
-                        });
-                      }
-
-                      // get machine info and set sql data
-                      virtualbox.vboxmanage(
-                        ["showvminfo", "--machinereadable", label],
-                        (err: Error, stdout: string) => {
-                          // get disk uuid from kv output of showvminfo
-                          let disk_uuid = stdout
-                            .split("\n")
-                            .find((line) => {
-                              return line
-                                .split("=")[0]
-                                .includes("SATA-ImageUUID-0-0");
-                            })
-                            ?.split("=")[1]
-                            .trim()
-                            .replace(/['"]+/g, "");
-                          let res_json = {
-                            alerts: {
-                              cpu: 180,
-                              io: 10000,
-                              network_in: 10,
-                              network_out: 10,
-                              transfer_quota: 80,
-                            },
-                            backups: {
-                              enabled: false,
-                            },
-                            created: datetime,
-                            group: "Linode-Group",
-                            hypervisor: "kvm",
-                            id: label,
-                            image: "linode/ubuntu20.04",
-                            ipv4: ipv4_address,
-                            ipv6: "",
-                            label: label,
-                            region: req.headers.region,
-                            specs: {
-                              disk: typeData[0].disk,
-                              memory: typeData[0].memory,
-                              transfer: typeData[0].transfer,
-                              vcpus: typeData[0].vcpus,
-                            },
-                            status: "running",
-                            tags: tags,
-                            type: req.headers.type,
-                            updated: datetime,
-                            watchdog_enabled: true,
-                          };
-                          let default_disk_json = {
-                            created: datetime,
-                            filesystem: "ext4",
-                            id: disk_uuid,
-                            label: "default",
-                            size: typeData[0].disk,
-                            status: "ready",
-                            updated: datetime,
-                          };
-                          let default_config_json = {
-                            comments:
-                              "This is the default config for this instance.",
-                            devices: {
-                              sda: {
-                                disk_id: disk_uuid,
-                                volume_id: null,
-                              },
-                              sdb: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sdc: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sdd: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sde: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sdf: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sdg: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                              sdh: {
-                                disk_id: null,
-                                volume_id: null,
-                              },
-                            },
-                            helpers: {
-                              devtmpfs_automount: false,
-                              distro: false,
-                              modules_dep: false,
-                              network: true,
-                              updatedb_disabled: true,
-                            },
-                            id: label,
-                            interfaces: [], // An empty interfaces array results in a default public interface configuration only.
-                            kernel: "linode/latest-64bit",
-                            label: "default",
-                            memory_limit: typeData[0].memory,
-                            root_device: "/dev/sda",
-                            run_level: "default",
-                            virt_mode: "paravirt",
-                          };
-                          db.run(
-                            `INSERT INTO instances ( id, data, disks, configs, current_config ) VALUES ('${label}','${JSON.stringify(
-                              res_json
-                            )}','[${JSON.stringify(
-                              default_disk_json
-                            )}]','[${JSON.stringify(
-                              default_config_json
-                            )}]','${label}')`
-                          );
-                          return res.json(res_json);
-                        }
-                      );
+          sleep(100);
+          virtualbox.guestproperty.get(
+            { vm: label, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
+            (ipv4_address: string) => {
+              if (ipv4_address) {
+                // set root password on machine
+                virtualbox.vboxmanage(
+                  [
+                    "guestcontrol",
+                    label,
+                    "--username",
+                    "local-linode",
+                    "--password",
+                    "local-linode",
+                    "run",
+                    "/bin/sh",
+                    "--",
+                    "-c",
+                    `echo local-linode | sudo -S /bin/sh -c 'echo root:${root_pass} | sudo -S /usr/sbin/chpasswd'`,
+                  ],
+                  (err: Error, _stdout: string) => {
+                    if (err) {
+                      return res.status(500).json({
+                        errors: [
+                          {
+                            reason: `Unable to set root password on VM.\n${err}`,
+                          },
+                        ],
+                      });
                     }
-                  );
-                } else {
-                  retry_loop();
-                }
+
+                    // get machine info and set sql data
+                    virtualbox.vboxmanage(
+                      ["showvminfo", "--machinereadable", label],
+                      (err: Error, stdout: string) => {
+                        // get disk uuid from kv output of showvminfo
+                        let disk_uuid = stdout
+                          .split("\n")
+                          .find((line) => {
+                            return line
+                              .split("=")[0]
+                              .includes("SATA-ImageUUID-0-0");
+                          })
+                          ?.split("=")[1]
+                          .trim()
+                          .replace(/['"]+/g, "");
+                        let res_json = {
+                          alerts: {
+                            cpu: 180,
+                            io: 10000,
+                            network_in: 10,
+                            network_out: 10,
+                            transfer_quota: 80,
+                          },
+                          backups: {
+                            enabled: false,
+                          },
+                          created: datetime,
+                          group: "Linode-Group",
+                          hypervisor: "kvm",
+                          id: label,
+                          image: "linode/ubuntu20.04",
+                          ipv4: ipv4_address,
+                          ipv6: "",
+                          label: label,
+                          region: req.headers.region,
+                          specs: {
+                            disk: typeData[0].disk,
+                            memory: typeData[0].memory,
+                            transfer: typeData[0].transfer,
+                            vcpus: typeData[0].vcpus,
+                          },
+                          status: "running",
+                          tags: tags,
+                          type: req.headers.type,
+                          updated: datetime,
+                          watchdog_enabled: true,
+                        };
+                        let default_disk_json = {
+                          created: datetime,
+                          filesystem: "ext4",
+                          id: disk_uuid,
+                          label: "default",
+                          size: typeData[0].disk,
+                          status: "ready",
+                          updated: datetime,
+                        };
+                        let default_config_json = {
+                          comments:
+                            "This is the default config for this instance.",
+                          devices: {
+                            sda: {
+                              disk_id: disk_uuid,
+                              volume_id: null,
+                            },
+                            sdb: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sdc: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sdd: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sde: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sdf: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sdg: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                            sdh: {
+                              disk_id: null,
+                              volume_id: null,
+                            },
+                          },
+                          helpers: {
+                            devtmpfs_automount: false,
+                            distro: false,
+                            modules_dep: false,
+                            network: true,
+                            updatedb_disabled: true,
+                          },
+                          id: label,
+                          interfaces: [], // An empty interfaces array results in a default public interface configuration only.
+                          kernel: "linode/latest-64bit",
+                          label: "default",
+                          memory_limit: typeData[0].memory,
+                          root_device: "/dev/sda",
+                          run_level: "default",
+                          virt_mode: "paravirt",
+                        };
+                        db.run(
+                          `INSERT INTO instances ( id, data, disks, configs, current_config ) VALUES ('${label}','${JSON.stringify(
+                            res_json
+                          )}','[${JSON.stringify(
+                            default_disk_json
+                          )}]','[${JSON.stringify(
+                            default_config_json
+                          )}]','${label}')`
+                        );
+                        return res.json(res_json);
+                      }
+                    );
+                  }
+                );
+              } else {
+                retry_loop();
               }
-            );
-          }, 100);
+            }
+          );
         })();
       });
     }
@@ -458,11 +473,6 @@ router.post("/:linodeId/boot", (req, res) => {
       });
     }
     let current_config = row["current_config"];
-    // release any processes using this VM as a precaution
-    virtualbox.vboxmanage(
-      ["startvm", linode_id, "--type", "emergencystop"],
-      (_err: Error, _stdout: string) => {}
-    );
     // set config id to current config if it wasn't supplied as a header
     if (!config_id) {
       config_id = current_config;
@@ -486,6 +496,8 @@ router.post("/:linodeId/boot", (req, res) => {
     for (let [k, v] of Object.entries(prev_device_config)) {
       if (v["disk_id"] || v["volume_id"]) {
         let port_number = k[2].charCodeAt(0) - 97;
+        sleep(500);
+        console.log(`Detaching medium from port ${port_number}`);
         virtualbox.vboxmanage(
           [
             "storageattach",
@@ -524,16 +536,23 @@ router.post("/:linodeId/boot", (req, res) => {
     configs_list[config_index]["devices"] = device_config;
     // attach drives in new config
     for (let [k, v] of Object.entries(device_config)) {
+      if (k != "sda") {
+        continue;
+      }
       if (v["disk_id"] || v["volume_id"]) {
         let port_number = k[2].charCodeAt(0) - 97;
+        sleep(500);
+        console.log(
+          `Attaching medium ${
+            v["disk_id"] || v["volume_id"]
+          } to port ${port_number}`
+        );
         virtualbox.vboxmanage(
           [
             "storageattach",
             linode_id,
             "--storagectl",
             "SATA",
-            // "--hotpluggable",
-            // "on",
             "--medium",
             v["disk_id"] || v["volume_id"],
             "--type",
@@ -543,7 +562,8 @@ router.post("/:linodeId/boot", (req, res) => {
           ],
           (err: Error, _stdout: string) => {
             if (err) {
-              return res.status(500).json({ errors: [{ reason: err }] });
+              console.log(err);
+              //return res.status(500).json({ errors: [{ reason: err }] });
             }
           }
         );
@@ -551,46 +571,67 @@ router.post("/:linodeId/boot", (req, res) => {
     }
 
     // start linode and update database, wait until fully booted to send result
-    setTimeout(() => {
-      virtualbox.start(linode_id, (err: Error) => {
-        if (err) {
-          return res.status(500).json({ errors: [{ reason: err }] });
+    sleep(500);
+    virtualbox.start(linode_id, (err: Error) => {
+      if (err) {
+        return res.status(500).json({ errors: [{ reason: err }] });
+      }
+      for (let [k, v] of Object.entries(device_config)) {
+        if (k == "sda") {
+          continue;
         }
-        (function retry_loop() {
-          setTimeout(() => {
-            virtualbox.guestproperty.get(
-              { vm: linode_id, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-              (ipv4_address: string) => {
-                if (ipv4_address) {
-                  // update any other database variables
-                  let updated_json = JSON.parse(row["data"]);
-                  updated_json["status"] = "running";
-                  // update database
-                  db.run(
-                    `UPDATE instances SET data='${JSON.stringify(
-                      updated_json
-                    )}', current_config='${config_id}', configs='${JSON.stringify(
-                      configs_list
-                    )}' WHERE id='${linode_id}'`,
-                    (err) => {
-                      if (err) {
-                        return res.status(500).json({
-                          errors: [{ field: "linodeId", reason: err }],
-                        });
-                      }
-                      // done
-                      return res.json({});
-                    }
-                  );
-                } else {
-                  retry_loop();
-                }
+        if (v["disk_id"] || v["volume_id"]) {
+          let port_number = k[2].charCodeAt(0) - 97;
+          sleep(500);
+          console.log(
+            `Attaching medium ${
+              v["disk_id"] || v["volume_id"]
+            } to port ${port_number}`
+          );
+          virtualbox.vboxmanage(
+            [
+              "storageattach",
+              linode_id,
+              "--storagectl",
+              "SATA",
+              "--medium",
+              v["disk_id"] || v["volume_id"],
+              "--type",
+              "hdd",
+              "--port",
+              port_number,
+            ],
+            (err: Error, _stdout: string) => {
+              if (err) {
+                console.log(err);
+                //return res.status(500).json({ errors: [{ reason: err }] });
               }
-            );
-          }, 100);
-        })();
-      });
-    }, 1000);
+            }
+          );
+        }
+      }
+
+      // update any other database variables
+      let updated_json = JSON.parse(row["data"]);
+      updated_json["status"] = "running";
+      // update database
+      db.run(
+        `UPDATE instances SET data='${JSON.stringify(
+          updated_json
+        )}', current_config='${config_id}', configs='${JSON.stringify(
+          configs_list
+        )}' WHERE id='${linode_id}'`,
+        (err) => {
+          if (err) {
+            return res.status(500).json({
+              errors: [{ field: "linodeId", reason: err }],
+            });
+          }
+          // done
+          return res.json({});
+        }
+      );
+    });
   });
 });
 
@@ -643,13 +684,29 @@ router.post("/:linodeId/shutdown", (req, res) => {
 router.post("/:linodeId/reboot", (req, res) => {
   let config_id = req.headers.config_id as string;
   let linode_id = req.params.linodeId;
-  virtualbox.poweroff(linode_id, (err: Error) => {
-    if (err) {
-      return res.status(500).json({
-        field: "linodeId",
-        errors: [{ reason: err }],
-      });
-    } else {
+
+  unlock_vm(linode_id);
+
+  // check if the machine is running
+  virtualbox.vboxmanage(
+    ["showvminfo", "--machinereadable", linode_id],
+    (_err: Error, stdout: string) => {
+      // get disk uuid from kv output of showvminfo
+      let machine_state = stdout
+        .split("\n")
+        .find((line) => {
+          return line.split("=")[0].includes("VMState");
+        })
+        ?.split("=")[1]
+        .trim()
+        .replace(/['"]+/g, "");
+
+      // if the machine is running, power it off and wait a second
+      if (machine_state?.includes("running")) {
+        virtualbox.poweroff(linode_id, (_err: Error) => {});
+        sleep(1000);
+      }
+
       db.get(`SELECT * FROM instances WHERE id='${linode_id}'`, (err, row) => {
         if (err) {
           return res
@@ -662,11 +719,6 @@ router.post("/:linodeId/reboot", (req, res) => {
           });
         }
         let current_config = row["current_config"];
-        // release any processes using this VM as a precaution
-        virtualbox.vboxmanage(
-          ["startvm", linode_id, "--type", "emergencystop"],
-          (_err: Error, _stdout: string) => {}
-        );
         // set config id to current config if it wasn't supplied as a header
         if (!config_id) {
           config_id = current_config;
@@ -693,6 +745,8 @@ router.post("/:linodeId/reboot", (req, res) => {
         for (let [k, v] of Object.entries(prev_device_config)) {
           if (v["disk_id"] || v["volume_id"]) {
             let port_number = k[2].charCodeAt(0) - 97;
+            sleep(500);
+            console.log(`Detaching medium from port ${port_number}`);
             virtualbox.vboxmanage(
               [
                 "storageattach",
@@ -731,16 +785,23 @@ router.post("/:linodeId/reboot", (req, res) => {
         configs_list[config_index]["devices"] = device_config;
         // attach drives in new config
         for (let [k, v] of Object.entries(device_config)) {
+          if (k != "sda") {
+            continue;
+          }
           if (v["disk_id"] || v["volume_id"]) {
             let port_number = k[2].charCodeAt(0) - 97;
+            sleep(500);
+            console.log(
+              `Attaching medium ${
+                v["disk_id"] || v["volume_id"]
+              } to port ${port_number}`
+            );
             virtualbox.vboxmanage(
               [
                 "storageattach",
                 linode_id,
                 "--storagectl",
                 "SATA",
-                // "--hotpluggable",
-                // "on",
                 "--medium",
                 v["disk_id"] || v["volume_id"],
                 "--type",
@@ -750,7 +811,8 @@ router.post("/:linodeId/reboot", (req, res) => {
               ],
               (err: Error, _stdout: string) => {
                 if (err) {
-                  return res.status(500).json({ errors: [{ reason: err }] });
+                  console.log(err);
+                  //return res.status(500).json({ errors: [{ reason: err }] });
                 }
               }
             );
@@ -758,49 +820,70 @@ router.post("/:linodeId/reboot", (req, res) => {
         }
 
         // start linode and update database, wait until fully booted to send result
-        setTimeout(() => {
-          virtualbox.start(linode_id, (err: Error) => {
-            if (err) {
-              return res.status(500).json({ errors: [{ reason: err }] });
+        sleep(500);
+        virtualbox.start(linode_id, (err: Error) => {
+          if (err) {
+            return res.status(500).json({ errors: [{ reason: err }] });
+          }
+          for (let [k, v] of Object.entries(device_config)) {
+            if (k == "sda") {
+              continue;
             }
-            (function retry_loop() {
-              setTimeout(() => {
-                virtualbox.guestproperty.get(
-                  { vm: linode_id, key: "/VirtualBox/GuestInfo/Net/0/V4/IP" },
-                  (ipv4_address: string) => {
-                    if (ipv4_address) {
-                      // update any other database variables
-                      let updated_json = JSON.parse(row["data"]);
-                      updated_json["status"] = "running";
-                      // update database
-                      db.run(
-                        `UPDATE instances SET data='${JSON.stringify(
-                          updated_json
-                        )}', current_config='${config_id}', configs='${JSON.stringify(
-                          configs_list
-                        )}' WHERE id='${linode_id}'`,
-                        (err) => {
-                          if (err) {
-                            return res.status(500).json({
-                              errors: [{ field: "linodeId", reason: err }],
-                            });
-                          }
-                          // done
-                          return res.json({});
-                        }
-                      );
-                    } else {
-                      retry_loop();
-                    }
+            if (v["disk_id"] || v["volume_id"]) {
+              let port_number = k[2].charCodeAt(0) - 97;
+              sleep(500);
+              console.log(
+                `Attaching medium ${
+                  v["disk_id"] || v["volume_id"]
+                } to port ${port_number}`
+              );
+              virtualbox.vboxmanage(
+                [
+                  "storageattach",
+                  linode_id,
+                  "--storagectl",
+                  "SATA",
+                  "--medium",
+                  v["disk_id"] || v["volume_id"],
+                  "--type",
+                  "hdd",
+                  "--port",
+                  port_number,
+                ],
+                (err: Error, _stdout: string) => {
+                  if (err) {
+                    console.log(err);
+                    //return res.status(500).json({ errors: [{ reason: err }] });
                   }
-                );
-              }, 100);
-            })();
-          });
-        }, 1000);
+                }
+              );
+            }
+          }
+
+          // update any other database variables
+          let updated_json = JSON.parse(row["data"]);
+          updated_json["status"] = "running";
+          // update database
+          db.run(
+            `UPDATE instances SET data='${JSON.stringify(
+              updated_json
+            )}', current_config='${config_id}', configs='${JSON.stringify(
+              configs_list
+            )}' WHERE id='${linode_id}'`,
+            (err) => {
+              if (err) {
+                return res.status(500).json({
+                  errors: [{ field: "linodeId", reason: err }],
+                });
+              }
+              // done
+              return res.json({});
+            }
+          );
+        });
       });
     }
-  });
+  );
 });
 
 // IP Address View

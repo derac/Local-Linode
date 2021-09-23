@@ -75,6 +75,8 @@ sudo ufw enable
 ## implementation details
 
 - many of the options for creating a new instance and config are not implemented, such as interfaces
+- the hotpluggable flag on vboxmanage storagectl causes a lot of issues. When attaching a drive to a running instance, it is set automatically and there isn't an issue. However, when using "--hotpluggable on", the vm will fail to start and other odd behavior. This must be worked around.
+- the VM can also get into states where it can't be controlled if operations are done on it before it's fully booted, it seems
 
 ## TODO
 
